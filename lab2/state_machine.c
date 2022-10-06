@@ -2,7 +2,7 @@
 unsigned char set_tram[5] = {0};
 int correctBytes = 0;
 
-void state_machine_multiplexer(unsigned char byte, State s){
+void state_machine_multiplexer(unsigned char byte, Role role, State s){
 	switch(s){
 		case START:
 			start_handler(byte);
@@ -14,7 +14,7 @@ void state_machine_multiplexer(unsigned char byte, State s){
 			read_bytes_handler(byte);
 			break;
 		case ANALYSE_TRAM:
-			analyse_tram_handler(byte);
+			analyse_tram_handler(byte, role);
 			break;
 		case SEND_UA:
 			send_ua_handler(byte);
@@ -49,8 +49,8 @@ State read_bytes_handler(unsigned char byte){
 	}
 }
 
-State analyse_tram_handler(unsigned char frame[], bool is_reading){
-	if (is_reading){
+State analyse_tram_handler(unsigned char frame[], Role role){
+	if (role == RECEIVER){
 		if (BCC_READ == BCC(frame[1], frame[2]) && (frame[2] == READ_CONTROL)){
 			return SEND_UA;
 		}
@@ -80,7 +80,6 @@ State send_ua_handler(int fd){
 		BCC_TRANSMITTER, 
 		FLAG
 	};
-
 
 	int bytes = write(fd, ua_tram, sizeof ua_tram);
 

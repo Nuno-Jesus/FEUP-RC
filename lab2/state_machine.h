@@ -16,7 +16,7 @@
 #define BCC_TRANSMITTER TRANSMITTER_CONTROL ^ ADDRESS
 #define BCC(c, a) c ^ a
 
-#define BAUDRATE B38400
+#define BAUDRATE 38400
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
 #define FALSE 0
@@ -35,8 +35,13 @@ typedef enum States{
 	END
 }State;
 
+typedef enum Roles{
+	RECEIVER,
+    TRANSMITTER
+}Role;
 
-void state_machine_multiplexer(unsigned char, State);
+
+void state_machine_multiplexer(unsigned char, Role, State);
 
 State start_handler(unsigned char);
 
@@ -44,6 +49,6 @@ State flag_rcv_handler(unsigned char);
 
 State read_bytes_handler(unsigned char);
 
-State analyse_tram_handler(unsigned char[], bool);
+State analyse_tram_handler(unsigned char[], Role);
 
 State send_ua_handler(int);

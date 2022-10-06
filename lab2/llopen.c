@@ -10,7 +10,7 @@
 #include "state_machine.h"
 
 State s = START;
-int llopen(int fd, char *port){
+int llopen(char *port, Role role){
  // Program usage: Uses either COM1 or COM2
     /* const char *port = argv[1];
 
@@ -75,13 +75,21 @@ int llopen(int fd, char *port){
 
     printf("New termios structure set\n");
 
-
-
     while(s != END){
         unsigned char byte = '\0';
 
         int bytes = read(fd, byte, 1);
         
-        state_machine_multiplexer(byte, s);
+        state_machine_multiplexer(byte, role, s);
     }
 }
+
+/**
+ * @brief 
+ * Pseudo code to write llopen (TRANSMITTER):
+ * 	1 - Open the port connection;
+ * 	2 - Send the SET tram;
+ * 	3 - Set an alarm with TIMEOUT;
+ * 	4 - Wait for the UA tram to be sent back;
+ * 	5 - If the UA tram wasn't received before the alarm went off, do something
+ */
