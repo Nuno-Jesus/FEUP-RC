@@ -10,9 +10,9 @@
 
 #define FLAG 0x7E
 #define ADDRESS 0x03
-#define READ_CONTROL 0x03
-#define TRANSMITTER_CONTROL 0x07
-#define BCC_READ READ_CONTROL ^ ADDRESS
+#define TRANSMITTER_CONTROL 0x03
+#define RECEIVER_CONTROL 0x07
+#define BCC_READ RECEIVER_CONTROL ^ ADDRESS
 #define BCC_TRANSMITTER TRANSMITTER_CONTROL ^ ADDRESS
 #define BCC(c, a) c ^ a
 
@@ -26,13 +26,15 @@
 
 volatile int STOP = FALSE;
 
+// CHANGE THIS NAMES 
 typedef enum States{
-	START,
-	FLAG_RCV,
-	READ_BYTES,
-	ANALYSE_TRAM,
-	SEND_UA,
-	END
+	S_START,
+	S_FLAG,
+	S_ADDRESS,
+	S_CONTROL,
+	S_BCC,
+	S_END_FLAG,
+	S_END
 }State;
 
 typedef enum Roles{
@@ -40,6 +42,10 @@ typedef enum Roles{
     TRANSMITTER
 }Role;
 
+struct applicationLayer {
+	int fileDescriptor; /* Descriptor correspondente à porta série*/
+	Role role /* TRANSMITTER | RECEIVER */
+}
 
 void state_machine_multiplexer(unsigned char, Role, State);
 

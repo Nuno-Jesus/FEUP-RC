@@ -1,3 +1,7 @@
+// Write to serial port in non-canonical mode
+//
+// Modified by: Eduardo Nuno Almeida [enalmeida@fe.up.pt]
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,12 +11,22 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include "state_machine.h"
+// Baudrate settings are defined in <asm/termbits.h>, which is
+// included by <termios.h>
+#define BAUDRATE B38400
+#define _POSIX_SOURCE 1 // POSIX compliant source
 
-State s = START;
-int llopen(char *port, Role role){
- // Program usage: Uses either COM1 or COM2
-    /* const char *port = argv[1];
+#define FALSE 0
+#define TRUE 1
+
+#define BUF_SIZE 256
+
+volatile int STOP = FALSE;
+
+int main(int argc, char *argv[])
+{
+    // Program usage: Uses either COM1 or COM2
+    const char *serialPortName = argv[1];
 
     if (argc < 2)
     {
@@ -22,15 +36,15 @@ int llopen(char *port, Role role){
                argv[0],
                argv[0]);
         exit(1);
-    } */
+    }
 
     // Open serial port device for reading and writing, and not as controlling tty
     // because we don't want to get killed if linenoise sends CTRL-C.
-    int fd = open(port, O_RDWR | O_NOCTTY);
+    int fd = open(serialPortName, O_RDWR | O_NOCTTY);
 
     if (fd < 0)
     {
-        perror(port);
+        perror(serialPortName);
         exit(-1);
     }
 
@@ -75,21 +89,36 @@ int llopen(char *port, Role role){
 
     printf("New termios structure set\n");
 
-    while(s != END){
-        unsigned char byte = '\0';
+    // Create string to send
+    unsigned char buf[BUF_SIZE] = {0};
+    unsigned char aux[BUF_SIZE] = {0};
 
-        int bytes = read(fd, byte, 1);
-        
-        state_machine_multiplexer(byte, role, s);
+    if(gets(aux) != NULL)
+    {
+        aux[BUF_SIZE - 1] = '\0';
+        memcpy(buf, aux, strlen(aux)); 
+        buf[BUF_SIZE - 1] = '\0';
     }
-}
 
-/**
- * @brief 
- * Pseudo code to write llopen (TRANSMITTER):
- * 	1 - Open the port connection;
- * 	2 - Send the SET tram;
- * 	3 - Set an alarm with TIMEOUT;
- * 	4 - Wait for the UA tram to be sent back;
- * 	5 - If the UA tram wasn't received before the alarm went off, do something
- */
+    int bytes = write(fd, buf, strlen(buf) + 1);
+    printf("%d bytes written\n", bytes);
+
+    // Wait until all bytes have been written to the serial port
+    sleep(1);
+
+    //Read from the receptor the previously sent string
+    unsigned char res[BUF_SIZE] = {0};
+    if(read(fd, res, BUF_SIZE) > 0)
+        printf("%s\n", res);
+
+    // Restore the old port settings
+    if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
+    {
+        perror("tcsetattr");
+        exit(-1);
+    }
+
+    close(fd);
+
+    return 0;
+}

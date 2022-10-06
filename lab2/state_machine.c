@@ -4,83 +4,81 @@ int correctBytes = 0;
 
 void state_machine_multiplexer(unsigned char byte, Role role, State s){
 	switch(s){
-		case START:
+		case S_START:
 			start_handler(byte);
 			break;
-		case FLAG_RCV:
-			flag_rcv_handler(byte);
+		case S_FLAG:
+			FLAG_handler(byte);
 			break;
-		case READ_BYTES:
-			read_bytes_handler(byte);
+		case S_ADDRESS:
+			address_handler(byte, role);
 			break;
-		case ANALYSE_TRAM:
-			analyse_tram_handler(byte, role);
+		case S_CONTROL:
+			control_handler(byte);
 			break;
-		case SEND_UA:
-			send_ua_handler(byte);
+		case S_BCC:
+			bcc_handler(byte);
+			break;
+		case S_END_FLAG:
+			end_FLAG_handler(byte, role);
+			break;
 		default:
 			break;
 	}
 }
 
 State start_handler(unsigned char byte){
-	if (byte == FLAG){
+	if (byte == S_FLAG){
 		set_tram[correctBytes] = byte;
-		return FLAG_RCV;
+		return S_FLAG;
 	}
-	return START;
+	return S_START;
 }
 
-State flag_rcv_handler(unsigned char byte){
+State FLAG_handler(unsigned char byte){
 	switch(byte){
-		case FLAG:
-			return FLAG_RCV;
-		default: 
-			return READ_BYTES;
-	}
-}
-
-State read_bytes_handler(unsigned char byte){
-	switch(byte){
-		case FLAG:
-			return ANALYSE_TRAM;
+		case S_FLAG:
+			return S_FLAG;
+		case S_ADDRESS: 
+			return S_ADDRESS;
 		default:
-			return READ_BYTES;
+			return S_START;
 	}
 }
 
-State analyse_tram_handler(unsigned char frame[], Role role){
+State a_rcv_handler(unsigned char byte, Role role){
+	if (byte == RECEIVER_CONTROL && role == RECEIVER)
+		return S_CONTROL;
+	else if (byte == TRANSMITTER_CONTROL && role == TRANSMITTER)
+		return S_CONTROL;
+	else if (byte == S_FLAG)
+		return S_FLAG;
+	else
+		return S_START;
+}
+
+State c_rcv_handler(unsigned char byte, Role role){
 	if (role == RECEIVER){
-		if (BCC_READ == BCC(frame[1], frame[2]) && (frame[2] == READ_CONTROL)){
-			return SEND_UA;
+		if (BCC_READ == BCC(frame[1], frame[2]) && (frame[2] == RECEIVER_CONTROL)){
+			return S_END_FLAG;
 		}
 		else{
 			correctBytes = 0;
-			return START;
+			return S_START;
 		}
 	}
 	
 	else {
-		if (BCC_TRANSMITTER == BCC(frame[1], frame[2]) && (frame[2] == TRANSMITTER_CONTROL)){
-			return SEND_UA;
-		}
+		if (BCC_TRANSMITTER == BCC(frame[1], frame[2]) && (frame[2] == TRANSMITTER_CONTROL))
+			return S_END_FLAG;
 		else{
 			correctBytes = 0;
-			return START;
+			return S_START;
 		}
 	}
 }
 
 
-State send_ua_handler(int fd){
-	unsigned char ua_tram[5] = {
-		FLAG, 
-		ADDRESS, 
-		TRANSMITTER_CONTROL, 
-		BCC_TRANSMITTER, 
-		FLAG
-	};
-
-	int bytes = write(fd, ua_tram, sizeof ua_tram);
-
+State bcc_handler(unsigned char frame[], Role role){
+	
 }
