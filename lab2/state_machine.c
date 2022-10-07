@@ -1,8 +1,8 @@
 #include "state_machine.h"
 
-State_Machine *new_state_machine(Device device)
+StateMachine *new_state_machine(Device device)
 {
-	State_Machine *machine = (State_Machine *)malloc(sizeof(State_Machine));
+	StateMachine *machine = (StateMachine *)malloc(sizeof(StateMachine));
 	if (machine == NULL)
 		return NULL;
 
@@ -34,21 +34,20 @@ unsigned char *create_expected_frame(Device device)
 	return frame;
 }
 
-void delete_state_machine(State_Machine *machine)
+void delete_state_machine(StateMachine *machine)
 {
 	if(!machine)
 		return;
 	
 	if(machine->frame)
 		free(machine->frame);
-
 	if(machine->expectedFrame)
 		free(machine->expectedFrame);
 	
 	free(machine);
 }
 
-void state_machine_multiplexer(State_Machine *machine)
+void state_machine_multiplexer(StateMachine *machine)
 {
 	switch(machine->state)
 	{
@@ -72,7 +71,7 @@ void state_machine_multiplexer(State_Machine *machine)
 	}
 }
 
-void start_handler(State_Machine *machine)
+void start_handler(StateMachine *machine)
 {
 	switch(machine->currentByte)
 	{
@@ -85,7 +84,7 @@ void start_handler(State_Machine *machine)
 	}
 }
 
-void wait_address_handler(State_Machine *machine)
+void wait_address_handler(StateMachine *machine)
 {
 	switch(machine->currentByte)
 	{
@@ -101,7 +100,7 @@ void wait_address_handler(State_Machine *machine)
 	}
 }
 
-void wait_control_handler(State_Machine *machine)
+void wait_control_handler(StateMachine *machine)
 {
 	unsigned char control;	
 
@@ -120,7 +119,7 @@ void wait_control_handler(State_Machine *machine)
 	}
 }
 
-void wait_bcc_handler(State_Machine *machine)
+void wait_bcc_handler(StateMachine *machine)
 {
 	unsigned char bcc;
 
@@ -139,7 +138,7 @@ void wait_bcc_handler(State_Machine *machine)
 	}
 }
 
-void wait_end_flag_handler(State_Machine *machine)
+void wait_end_flag_handler(StateMachine *machine)
 {
 	switch(machine->currentByte)
 	{

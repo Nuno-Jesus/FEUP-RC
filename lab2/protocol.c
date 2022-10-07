@@ -1,21 +1,21 @@
 #include "protocol.h"
 
-Port *port;
+PortInfo *port;
 
-Port *new_port(const char *name)
+PortInfo *new_port(const char *name)
 {
-	Port port = (Port *)malloc(sizeof(Port));
+	PortInfo port = (PortInfo *)malloc(sizeof(PortInfo));
 	if (!port)
 		return NULL;
 
 	port->name = name;
 	memset(port->oldtio, 0, sizeof(port->oldtio));
-	memset(port->port->newtio, 0, sizeof(port->port->newtio));
+	memset(port->newtio, 0, sizeof(port->newtio));
 	
 	return port;
 }
 
-void delete_port(Port *port)
+void delete_port(PortInfo *port)
 {
 	free(port->name);
 	free(port);
@@ -24,7 +24,7 @@ void delete_port(Port *port)
 int canonical_open(const char *portname)
 {
 	int fd;
-    Port *port;
+    PortInfo *port;
 
 	if ((fd = open(portname, O_RDWR | O_NOCTTY)) < 0)
 		print_error(portname);

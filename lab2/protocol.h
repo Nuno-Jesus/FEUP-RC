@@ -8,11 +8,11 @@ typedef struct port_t
 	char *name;
 	struct termios oldtio;
 	struct termios newtio;
-} Port;
+} PortInfo;
 
-Port *new_port(const char *);
+PortInfo *new_port(const char *);
 
-void delete_port(Port *);
+void delete_port(PortInfo *);
 
 int llopen(const char *, Device );
 

@@ -36,26 +36,26 @@ typedef struct state_machine_t
 	unsigned char *frame;
 	unsigned char *expectedFrame;
 	unsigned char currentByte;
-} State_Machine;
+} StateMachine;
 
 
-State_Machine *new_state_machine(Device);
+StateMachine *new_state_machine(Device);
 
 unsigned char *create_expected_frame(Device);
 
-void delete_state_machine(State_Machine *);
+void delete_state_machine(StateMachine *);
 
 //! Handlers
-void state_machine_multiplexer(State_Machine *);
+void state_machine_multiplexer(StateMachine *);
 
-void start_handler(State_Machine *);
+void start_handler(StateMachine *);
 
-void wait_address_handler(State_Machine *);
+void wait_address_handler(StateMachine *);
 
-void wait_control_handler(State_Machine *);
+void wait_control_handler(StateMachine *);
 
-void wait_bcc_handler(State_Machine *);
+void wait_bcc_handler(StateMachine *);
 
-void wait_end_flag_handler(State_Machine *);
+void wait_end_flag_handler(StateMachine *);
 
 #endif
