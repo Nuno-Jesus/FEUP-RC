@@ -10,28 +10,12 @@ StateMachine *new_state_machine(Device device)
 	machine->device = device;
 	machine->currentByte = 0x00;
 	machine->frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
-	machine->expectedFrame = create_expected_frame(device);
-	if(!machine->expectedFrame || !machine->frame){
+	if(!machine->frame){
 		delete_state_machine(machine);
 		return NULL;
 	}
 		
 	return machine;
-}
-
-unsigned char *create_expected_frame(Device device)
-{
-	unsigned char *frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
-	if (!frame)
-		return NULL;
-
-	frame[0] = FLAG;
-	frame[1] = ADDRESS;
-	frame[2] = device == RECEIVER ? CONTROL_SET : CONTROL_UA;
-	frame[3] = device == RECEIVER ? BCC_SET : BCC_UA;
-	frame[4] = FLAG;
-
-	return frame;
 }
 
 void delete_state_machine(StateMachine *machine)
@@ -41,8 +25,6 @@ void delete_state_machine(StateMachine *machine)
 	
 	if(machine->frame)
 		free(machine->frame);
-	if(machine->expectedFrame)
-		free(machine->expectedFrame);
 	
 	free(machine);
 }

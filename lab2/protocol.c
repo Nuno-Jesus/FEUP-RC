@@ -21,6 +21,21 @@ void delete_port(PortInfo *port)
 	free(port);
 }
 
+unsigned char *get_open_frame(Device device)
+{
+	unsigned char *frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
+	if (!frame)
+		return NULL;
+
+	frame[0] = FLAG;
+	frame[1] = ADDRESS;
+	frame[2] = device == RECEIVER ? CONTROL_SET : CONTROL_UA;
+	frame[3] = device == RECEIVER ? BCC_SET : BCC_UA;
+	frame[4] = FLAG;
+
+	return frame;
+}
+
 int canonical_open(const char *portname)
 {
 	int fd;
@@ -73,7 +88,18 @@ int canonical_close(int fd)
     if (tcsetattr(fd, TCSANOW, &port->oldtio) == -1)
    		print_error("tcsetattr()");
 
+	delete_port(port);
     close(fd);
+}
+
+int llopenTransmitter()
+{
+	return -1;
+}
+
+int llopenReceiver()
+{
+	return -1;
 }
 
 int llopen(const char *port, Device device)
@@ -83,17 +109,13 @@ int llopen(const char *port, Device device)
 	if ((fd = canonical_open(port)) == -1)
 		return -1;
 
-	/**
-	 * Set an alarm to define a timeout
-	 * Create the SET frame
-	 * Send the SET frame
-	 * Wait for the UA frame
-	 * Read for the UA frame
-	 * If timeout occurs, retransmit
-	 * If the number of retransmissions is reached, abort
-	 */
+	//NEED TO: Check for errors in each llopen helper
+    if (device == RECEIVER)
+		llopenReceiver();
+	else 
+		llopenTransmitter();
 
-    
+	return fd;
 }
 
 int llclose(int fd)

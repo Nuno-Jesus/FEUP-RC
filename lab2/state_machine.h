@@ -34,14 +34,11 @@ typedef struct state_machine_t
 	State state;
 	Device device;
 	unsigned char *frame;
-	unsigned char *expectedFrame;
 	unsigned char currentByte;
 } StateMachine;
 
 
 StateMachine *new_state_machine(Device);
-
-unsigned char *create_expected_frame(Device);
 
 void delete_state_machine(StateMachine *);
 
