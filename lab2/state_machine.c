@@ -27,7 +27,7 @@ unsigned char *create_expected_frame(Device device)
 
 	frame[0] = FLAG;
 	frame[1] = ADDRESS;
-	frame[2] = device == RECEIVER ? SET_CONTROL : UA_CONTROL;
+	frame[2] = device == RECEIVER ? CONTROL_SET : CONTROL_UA;
 	frame[3] = device == RECEIVER ? BCC_SET : BCC_UA;
 	frame[4] = FLAG;
 
@@ -46,4 +46,108 @@ void delete_state_machine(State_Machine *machine)
 		free(machine->expectedFrame);
 	
 	free(machine);
+}
+
+void state_machine_multiplexer(State_Machine *machine)
+{
+	switch(machine->state)
+	{
+		case START:
+			start_handler(machine);
+			break;
+		case WAIT_ADDRESS:
+			wait_address_handler(machine);
+			break;
+		case WAIT_CONTROL:
+			wait_control_handler(machine);
+			break;
+		case WAIT_BCC:
+			wait_bcc_handler(machine);
+			break;
+		case WAIT_END_FLAG:
+			wait_end_flag_handler(machine);
+			break;
+		default:
+			return;
+	}
+}
+
+void start_handler(State_Machine *machine)
+{
+	switch(machine->currentByte)
+	{
+		case FLAG:
+			machine->state = WAIT_ADDRESS;
+			break;
+		default:
+			machine->state = START;
+			break;
+	}
+}
+
+void wait_address_handler(State_Machine *machine)
+{
+	switch(machine->currentByte)
+	{
+		case FLAG:
+			machine->state = WAIT_ADDRESS;
+			break;
+		case ADDRESS:
+			machine->state = WAIT_CONTROL;
+			break;
+		default:
+			machine->state = START;
+			break;
+	}
+}
+
+void wait_control_handler(State_Machine *machine)
+{
+	unsigned char control;	
+
+	control = machine->device == RECEIVER ? CONTROL_SET : CONTROL_UA;
+	switch(machine->currentByte)
+	{
+		case FLAG:
+			machine->state = WAIT_ADDRESS;
+			break;
+		case control:
+			machine->state = WAIT_BCC;
+			break;
+		default:
+			machine->state = START;
+			break;
+	}
+}
+
+void wait_bcc_handler(State_Machine *machine)
+{
+	unsigned char bcc;
+
+	bcc = machine->device == RECEIVER ? BCC_SET : BCC_UA;
+	switch(machine->currentByte)
+	{
+		case FLAG:
+			machine->state = WAIT_ADDRESS;
+			break;
+		case bcc:
+			machine->state = WAIT_END_FLAG;
+			break;
+		default:
+			machine->state = START;
+			break;
+	}
+}
+
+void wait_end_flag_handler(State_Machine *machine)
+{
+	switch(machine->currentByte)
+	{
+		case FLAG:
+			machine->state = END;
+			break;
+		default:
+			machine->start = START;
+			break;
+	}
 }

@@ -10,10 +10,10 @@
 
 #define FLAG 0x7E
 #define ADDRESS 0x03
-#define SET_CONTROL 0x03
-#define UA_CONTROL 0x07
-#define BCC_SET SET_CONTROL ^ ADDRESS
-#define BCC_UA UA_CONTROL ^ ADDRESS
+#define CONTROL_SET 0x03
+#define CONTROL_UA 0x07
+#define BCC_SET CONTROL_SET ^ ADDRESS
+#define BCC_UA CONTROL_UA ^ ADDRESS
 #define BCC(c, a) c ^ a
 
 #define BAUDRATE 38400
@@ -34,7 +34,13 @@ typedef enum state_t
 	WAIT_BCC,
 	WAIT_END_FLAG,
 	END
-}State;
+} State;
+
+typedef enum device_t
+{
+	RECEIVER,
+    TRANSMITTER
+} Device;
 
 typedef struct state_machine_t
 {
@@ -45,11 +51,6 @@ typedef struct state_machine_t
 	unsigned char currentByte;
 } State_Machine;
 
-typedef enum device_t
-{
-	RECEIVER,
-    TRANSMITTER
-}Device;
 
 State_Machine *new_state_machine(Device);
 
@@ -57,6 +58,7 @@ unsigned char *create_expected_frame(Device);
 
 void delete_state_machine(State_Machine *);
 
+//! Handlers
 void state_machine_multiplexer(State_Machine *);
 
 void start_handler(State_Machine *);
