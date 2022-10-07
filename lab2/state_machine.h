@@ -1,30 +1,17 @@
-#include <fcntl.h>
+#ifndef STATE_MACHINE_H
+#define STATE_MACHINE_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
+#include <termios.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <termios.h>
-#include <unistd.h>
 
-#define FLAG 0x7E
-#define ADDRESS 0x03
-#define CONTROL_SET 0x03
-#define CONTROL_UA 0x07
-#define BCC_SET CONTROL_SET ^ ADDRESS
-#define BCC_UA CONTROL_UA ^ ADDRESS
-#define BCC(c, a) c ^ a
-
-#define BAUDRATE 38400
-#define _POSIX_SOURCE 1 // POSIX compliant source
-
-#define FALSE 0
-#define TRUE 1
-
-#define BUF_SIZE 256
-
-volatile int STOP = FALSE;
+#include "macros.h"
 
 typedef enum state_t
 {
@@ -70,3 +57,5 @@ void wait_control_handler(State_Machine *);
 void wait_bcc_handler(State_Machine *);
 
 void wait_end_flag_handler(State_Machine *);
+
+#endif
