@@ -53,6 +53,10 @@ typedef enum device_t
 
 State_Machine *new_state_machine(Device);
 
+unsigned char *create_expected_frame(Device);
+
+void delete_state_machine(State_Machine *);
+
 void state_machine_multiplexer(State_Machine *);
 
 void start_handler(State_Machine *);
@@ -61,6 +65,6 @@ void wait_address_handler(State_Machine *);
 
 void wait_control_handler(State_Machine *);
 
-void wait_bcc_handler(State_Machine);
+void wait_bcc_handler(State_Machine *);
 
 void wait_end_flag_handler(State_Machine *);
