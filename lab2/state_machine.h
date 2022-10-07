@@ -10,10 +10,10 @@
 
 #define FLAG 0x7E
 #define ADDRESS 0x03
-#define TRANSMITTER_CONTROL 0x03
-#define RECEIVER_CONTROL 0x07
-#define BCC_READ RECEIVER_CONTROL ^ ADDRESS
-#define BCC_TRANSMITTER TRANSMITTER_CONTROL ^ ADDRESS
+#define SET_CONTROL 0x03
+#define UA_CONTROL 0x07
+#define BCC_SET SET_CONTROL ^ ADDRESS
+#define BCC_UA UA_CONTROL ^ ADDRESS
 #define BCC(c, a) c ^ a
 
 #define BAUDRATE 38400
@@ -27,34 +27,28 @@
 volatile int STOP = FALSE;
 
 // CHANGE THIS NAMES 
-typedef enum States{
-	S_START,
-	S_FLAG,
-	S_ADDRESS,
-	S_CONTROL,
-	S_BCC,
-	S_END_FLAG,
-	S_END
+typedef enum state_t{
+	START,
+	PARSE_ADDRESS,
+	PARSE_CONTROL,
+	PARSE_BCC,
+	PARSE_END_FLAG,
+	END
 }State;
 
-typedef enum Roles{
+typedef enum device_t{
 	RECEIVER,
     TRANSMITTER
-}Role;
+}Device;
 
-struct applicationLayer {
-	int fileDescriptor; /* Descriptor correspondente à porta série*/
-	Role role /* TRANSMITTER | RECEIVER */
-}
+void state_machine_multiplexer(unsigned char, Device, State);
 
-void state_machine_multiplexer(unsigned char, Role, State);
+/* State start_handler(unsigned char);
 
-State start_handler(unsigned char);
+State parse_address_handler(unsigned char);
 
-State flag_rcv_handler(unsigned char);
+State parse_control_handler(unsigned char);
 
-State read_bytes_handler(unsigned char);
+State parse_bcc_handler(unsigned char[], Device);
 
-State analyse_tram_handler(unsigned char[], Role);
-
-State send_ua_handler(int);
+State end_handler(int); */
