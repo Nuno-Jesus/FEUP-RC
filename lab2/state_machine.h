@@ -26,29 +26,41 @@
 
 volatile int STOP = FALSE;
 
-// CHANGE THIS NAMES 
-typedef enum state_t{
+typedef enum state_t
+{
 	START,
-	PARSE_ADDRESS,
-	PARSE_CONTROL,
-	PARSE_BCC,
-	PARSE_END_FLAG,
+	WAIT_ADDRESS,
+	WAIT_CONTROL,
+	WAIT_BCC,
+	WAIT_END_FLAG,
 	END
 }State;
 
-typedef enum device_t{
+typedef struct state_machine_t
+{
+	State state;
+	Device device;
+	unsigned char *frame;
+	unsigned char *expectedFrame;
+	unsigned char currentByte;
+} State_Machine;
+
+typedef enum device_t
+{
 	RECEIVER,
     TRANSMITTER
 }Device;
 
-void state_machine_multiplexer(unsigned char, Device, State);
+State_Machine *new_state_machine(Device);
 
-/* State start_handler(unsigned char);
+void state_machine_multiplexer(State_Machine *);
 
-State parse_address_handler(unsigned char);
+void start_handler(State_Machine *);
 
-State parse_control_handler(unsigned char);
+void wait_address_handler(State_Machine *);
 
-State parse_bcc_handler(unsigned char[], Device);
+void wait_control_handler(State_Machine *);
 
-State end_handler(int); */
+void wait_bcc_handler(State_Machine);
+
+void wait_end_flag_handler(State_Machine *);
