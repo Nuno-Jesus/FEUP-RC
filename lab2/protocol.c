@@ -4,13 +4,13 @@ PortInfo *port;
 
 PortInfo *new_port(const char *name)
 {
-	PortInfo port = (PortInfo *)malloc(sizeof(PortInfo));
+	PortInfo *port = (PortInfo *)malloc(sizeof(PortInfo));
 	if (!port)
 		return NULL;
 
 	port->name = name;
-	memset(port->oldtio, 0, sizeof(port->oldtio));
-	memset(port->newtio, 0, sizeof(port->newtio));
+	memset(&port->oldtio, 0, sizeof(port->oldtio));
+	memset(&port->newtio, 0, sizeof(port->newtio));
 	
 	return port;
 }
@@ -50,7 +50,10 @@ int canonical_open(const char *portname)
 
     // Save current port settings
     if (tcgetattr(fd, &port->oldtio) == -1)
+	{
+		delete_port(port);
    		print_error("tcgetattr()");
+	}
 
     // Clear struct for new port settings
     memset(&port->newtio, 0, sizeof(port->newtio));
@@ -85,19 +88,51 @@ int canonical_open(const char *portname)
 int canonical_close(int fd)
 {
 	// Restore the old port settings
+	delete_port(port);
+
     if (tcsetattr(fd, TCSANOW, &port->oldtio) == -1)
    		print_error("tcsetattr()");
 
-	delete_port(port);
     close(fd);
 }
 
-int llopenTransmitter()
+int sendFrame(int fd, unsigned char *frame, size_t n)
 {
-	return -1;
+	return write(fd, frame, n);
 }
 
-int llopenReceiver()
+/**
+	 * @brief 
+	 * 1 - Send the SET frame
+	 * 2 - Wait for the UA frame
+	 * 3 - Check for timeouts when receiveing or sending the frames
+	 * 4 - Check for maximum number of attempts
+	 */
+int llopenTransmitter(int fd)
+{
+	unsigned char *setFrame;
+
+	if (!(setFrame = get_open_frame(TRANSMITTER)))
+		return -1;
+
+	if (sendFrame(fd, setFrame, 5) == -1)
+		return -1;
+
+	/**
+	 * @brief 
+	 * Install alarm with TIMEOUT seconds
+	 * Pass an alarm handler to increase the number of attempts to send the frame to the port
+	 * While the number of attempts isn't reached:
+	 * 		Attempt to receive the response (UA);
+	 * 		If the number of attempts increases:
+	 * 			Initiate SET retransmission
+	 * When reaching ATTEMPTS, return -1;
+	 */
+
+	
+}
+
+int llopenReceiver(int fd)
 {
 	return -1;
 }
@@ -111,9 +146,9 @@ int llopen(const char *port, Device device)
 
 	//NEED TO: Check for errors in each llopen helper
     if (device == RECEIVER)
-		llopenReceiver();
+		llopenReceiver(fd);
 	else 
-		llopenTransmitter();
+		llopenTransmitter(fd);
 
 	return fd;
 }

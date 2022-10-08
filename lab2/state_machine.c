@@ -84,16 +84,22 @@ void wait_address_handler(StateMachine *machine)
 
 void wait_control_handler(StateMachine *machine)
 {
-	unsigned char control;	
-
-	control = machine->device == RECEIVER ? CONTROL_SET : CONTROL_UA;
 	switch(machine->currentByte)
 	{
 		case FLAG:
 			machine->state = WAIT_ADDRESS;
 			break;
-		case control:
-			machine->state = WAIT_BCC;
+		case CONTROL_SET:
+			if(machine->device == RECEIVER)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
+			break;
+		case CONTROL_UA:
+			if(machine->device == TRANSMITTER)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
 			break;
 		default:
 			machine->state = START;
@@ -103,16 +109,22 @@ void wait_control_handler(StateMachine *machine)
 
 void wait_bcc_handler(StateMachine *machine)
 {
-	unsigned char bcc;
-
-	bcc = machine->device == RECEIVER ? BCC_SET : BCC_UA;
 	switch(machine->currentByte)
 	{
 		case FLAG:
 			machine->state = WAIT_ADDRESS;
 			break;
-		case bcc:
-			machine->state = WAIT_END_FLAG;
+		case BCC_SET:
+			if(machine->device == RECEIVER)
+				machine->state = WAIT_END_FLAG;
+			else
+				machine->state = START;
+			break;
+		case BCC_UA:
+			if(machine->device == TRANSMITTER)
+				machine->state = WAIT_END_FLAG;
+			else
+				machine->state = START;
 			break;
 		default:
 			machine->state = START;
@@ -128,7 +140,7 @@ void wait_end_flag_handler(StateMachine *machine)
 			machine->state = END;
 			break;
 		default:
-			machine->start = START;
+			machine->state = START;
 			break;
 	}
 }

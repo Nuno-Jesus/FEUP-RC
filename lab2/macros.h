@@ -9,6 +9,9 @@
 #define BCC_UA CONTROL_UA ^ ADDRESS
 #define BCC(c, a) c ^ a
 
+#define TIMEOUT 5
+#define ATTEMPTS 3
+
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
