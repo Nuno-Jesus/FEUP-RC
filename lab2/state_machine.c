@@ -8,7 +8,7 @@ StateMachine *new_state_machine(Device device)
 
 	machine->state = START;
 	machine->device = device;
-	machine->currentByte = 0x00;
+	machine->byte = 0x00;
 	machine->frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
 	if(!machine->frame){
 		delete_state_machine(machine);
@@ -55,7 +55,7 @@ void state_machine_multiplexer(StateMachine *machine)
 
 void start_handler(StateMachine *machine)
 {
-	switch(machine->currentByte)
+	switch(machine->byte)
 	{
 		case FLAG:
 			machine->state = WAIT_ADDRESS;
@@ -68,7 +68,7 @@ void start_handler(StateMachine *machine)
 
 void wait_address_handler(StateMachine *machine)
 {
-	switch(machine->currentByte)
+	switch(machine->byte)
 	{
 		case FLAG:
 			machine->state = WAIT_ADDRESS;
@@ -84,19 +84,19 @@ void wait_address_handler(StateMachine *machine)
 
 void wait_control_handler(StateMachine *machine)
 {
-	switch(machine->currentByte)
+	switch(machine->byte)
 	{
 		case FLAG:
 			machine->state = WAIT_ADDRESS;
 			break;
 		case CONTROL_SET:
-			if(machine->device == RECEIVER)
+			if(machine->device == TRANSMITTER)
 				machine->state = WAIT_BCC;
 			else
 				machine->state = START;
 			break;
 		case CONTROL_UA:
-			if(machine->device == TRANSMITTER)
+			if(machine->device == RECEIVER)
 				machine->state = WAIT_BCC;
 			else
 				machine->state = START;
@@ -109,19 +109,19 @@ void wait_control_handler(StateMachine *machine)
 
 void wait_bcc_handler(StateMachine *machine)
 {
-	switch(machine->currentByte)
+	switch(machine->byte)
 	{
 		case FLAG:
 			machine->state = WAIT_ADDRESS;
 			break;
 		case BCC_SET:
-			if(machine->device == RECEIVER)
+			if(machine->device == TRANSMITTER)
 				machine->state = WAIT_END_FLAG;
 			else
 				machine->state = START;
 			break;
 		case BCC_UA:
-			if(machine->device == TRANSMITTER)
+			if(machine->device == RECEIVER)
 				machine->state = WAIT_END_FLAG;
 			else
 				machine->state = START;
@@ -134,7 +134,7 @@ void wait_bcc_handler(StateMachine *machine)
 
 void wait_end_flag_handler(StateMachine *machine)
 {
-	switch(machine->currentByte)
+	switch(machine->byte)
 	{
 		case FLAG:
 			machine->state = END;

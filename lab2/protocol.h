@@ -2,9 +2,11 @@
 #define PROTOCOL_H
 
 #include "state_machine.h"
+#include "alarm.h"
 
 typedef struct port_t
 {
+	int fd;
 	char *name;
 	struct termios oldtio;
 	struct termios newtio;

@@ -1,6 +1,17 @@
 #ifndef MACROS_H
 #define MACROS_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <unistd.h>
+#include <signal.h>
+#include <termios.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #define FLAG 0x7E
 #define ADDRESS 0x03
 #define CONTROL_SET 0x03

@@ -1,16 +1,6 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <unistd.h>
-#include <termios.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include "macros.h"
 
 typedef enum state_t
@@ -34,7 +24,7 @@ typedef struct state_machine_t
 	State state;
 	Device device;
 	unsigned char *frame;
-	unsigned char currentByte;
+	unsigned char byte;
 } StateMachine;
 
 

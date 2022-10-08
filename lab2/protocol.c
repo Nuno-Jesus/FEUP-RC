@@ -1,13 +1,15 @@
 #include "protocol.h"
 
 PortInfo *port;
+Alarm *a;
 
-PortInfo *new_port(const char *name)
+PortInfo *new_port(const char *name, int fd)
 {
 	PortInfo *port = (PortInfo *)malloc(sizeof(PortInfo));
 	if (!port)
 		return NULL;
 
+	port->fd = fd;
 	port->name = name;
 	memset(&port->oldtio, 0, sizeof(port->oldtio));
 	memset(&port->newtio, 0, sizeof(port->newtio));
@@ -29,8 +31,8 @@ unsigned char *get_open_frame(Device device)
 
 	frame[0] = FLAG;
 	frame[1] = ADDRESS;
-	frame[2] = device == RECEIVER ? CONTROL_SET : CONTROL_UA;
-	frame[3] = device == RECEIVER ? BCC_SET : BCC_UA;
+	frame[2] = device == TRANSMITTER ? CONTROL_SET : CONTROL_UA;
+	frame[3] = device == TRANSMITTER ? BCC_SET : BCC_UA;
 	frame[4] = FLAG;
 
 	return frame;
@@ -44,12 +46,12 @@ int canonical_open(const char *portname)
 	if ((fd = open(portname, O_RDWR | O_NOCTTY)) < 0)
 		print_error(portname);
 
-	port = new_port(portname);
+	port = new_port(portname, fd);
 	if (port == NULL)
 		print_error("malloc()");
 
     // Save current port settings
-    if (tcgetattr(fd, &port->oldtio) == -1)
+    if (tcgetattr(port->fd, &port->oldtio) == -1)
 	{
 		delete_port(port);
    		print_error("tcgetattr()");
@@ -75,10 +77,10 @@ int canonical_open(const char *portname)
     // by fd but not transmitted, or data received but not read,
     // depending on the value of queue_selector:
     //   TCIFLUSH - flushes data received but not read.
-    tcflush(fd, TCIOFLUSH);
+    tcflush(port->fd, TCIOFLUSH);
 
     // Set new port settings
-    if (tcsetattr(fd, TCSANOW, &port->newtio) == -1)
+    if (tcsetattr(port->fd, TCSANOW, &port->newtio) == -1)
 		print_error("tcsetattr()");
 
     printf("New termios structure set\n");
@@ -96,9 +98,40 @@ int canonical_close(int fd)
     close(fd);
 }
 
-int sendFrame(int fd, unsigned char *frame, size_t n)
+int send_set_frame()
 {
-	return write(fd, frame, n);
+	ssize_t bytes;
+	unsigned char *setFrame = get_open_frame(RECEIVER);
+
+	bytes = write(port->fd, setFrame, 5);
+	free(setFrame);
+
+	return bytes;
+}
+
+int receive_set_frame()
+{
+	StateMachine* machine = new_state_machine(TRANSMITTER);
+	if (!machine)
+		return -1;
+
+	while (machine->state != END)
+	{
+		if (!read(port->fd, &machine->byte, 1))
+			return -1;
+
+		state_machine_multiplexer(machine);
+	}
+
+	return 0;
+}
+
+
+
+void alarm_handler(int signal)
+{
+	a->isActive = FALSE;
+	a->counter++;
 }
 
 /**
@@ -108,15 +141,24 @@ int sendFrame(int fd, unsigned char *frame, size_t n)
 	 * 3 - Check for timeouts when receiveing or sending the frames
 	 * 4 - Check for maximum number of attempts
 	 */
-int llopenTransmitter(int fd)
+int llopen_transmitter()
 {
-	unsigned char *setFrame;
 
-	if (!(setFrame = get_open_frame(TRANSMITTER)))
+	if (send_set_frame() == -1)
 		return -1;
 
-	if (sendFrame(fd, setFrame, 5) == -1)
+	if (!(a = new_alarm(alarm_handler, TIMEOUT)))
 		return -1;
+
+	set_alarm(a);
+    while (a->counter < ATTEMPTS)
+    {
+        if (!a->isActive)
+        {
+            start_alarm(a);
+			//WAS HERE
+        }
+    }
 
 	/**
 	 * @brief 
@@ -129,10 +171,10 @@ int llopenTransmitter(int fd)
 	 * When reaching ATTEMPTS, return -1;
 	 */
 
-	
+
 }
 
-int llopenReceiver(int fd)
+int llopen_receiver()
 {
 	return -1;
 }
@@ -146,9 +188,9 @@ int llopen(const char *port, Device device)
 
 	//NEED TO: Check for errors in each llopen helper
     if (device == RECEIVER)
-		llopenReceiver(fd);
+		llopen_receiver();
 	else 
-		llopenTransmitter(fd);
+		llopen_transmitter();
 
 	return fd;
 }
