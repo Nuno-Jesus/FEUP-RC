@@ -23,7 +23,7 @@ void delete_port(PortInfo *port)
 	free(port);
 }
 
-unsigned char *get_open_frame(Device device)
+unsigned char *get_open_frame(Frame f)
 {
 	unsigned char *frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
 	if (!frame)
@@ -31,8 +31,9 @@ unsigned char *get_open_frame(Device device)
 
 	frame[0] = FLAG;
 	frame[1] = ADDRESS;
-	frame[2] = device == TRANSMITTER ? CONTROL_SET : CONTROL_UA;
-	frame[3] = device == TRANSMITTER ? BCC_SET : BCC_UA;
+	//Apply switch to further cases of other supervision frames
+	frame[2] = f == SET ? CONTROL_SET : CONTROL_UA;
+	frame[3] = f == SET ? BCC_SET : BCC_UA;
 	frame[4] = FLAG;
 
 	return frame;
@@ -98,10 +99,10 @@ int canonical_close(int fd)
     close(fd);
 }
 
-int send_supervision_frame(Device device)
+int send_supervision_frame(Frame frame)
 {
 	ssize_t bytes;
-	unsigned char *frame = get_open_frame(device);
+	unsigned char *frame = get_open_frame(frame);
 
 	bytes = write(port->fd, frame, 5);
 	free(frame);
@@ -112,9 +113,9 @@ int send_supervision_frame(Device device)
 	return bytes;
 }
 
-int receive_supervision_frame(Device device)
+int receive_supervision_frame(Device device, Frame frame)
 {
-	StateMachine* machine = new_state_machine(TRANSMITTER);
+	StateMachine* machine = new_state_machine(device, frame);
 	if (!machine)
 		return 0;
 
@@ -141,16 +142,9 @@ void alarm_handler(int signal)
 	alarm(a->timeout);
 }
 
-/**
-	 * @brief 
-	 * 1 - Send the SET frame
-	 * 2 - Wait for the UA frame
-	 * 3 - Check for timeouts when receiveing or sending the frames
-	 * 4 - Check for maximum number of attempts
-	 */
-int llopen_transmitter()
+int llopen_handshake(Device device, Frame frame)
 {
-	// Setup the alarm structure and the alarm itself
+		// Setup the alarm structure and the alarm itself
 	if (!(a = new_alarm(alarm_handler, TIMEOUT)))
 		return 0;
 
@@ -160,38 +154,10 @@ int llopen_transmitter()
 	// Begin transmission of supervision frame
 	do
 	{
-		if (send_supervision_frame(TRANSMITTER) != 1)
+		if (send_supervision_frame(frame) != 1)
 			return 0;
 
-		if (receive_supervision_frame(TRANSMITTER))
-		{
-			stop_alarm();
-			break;
-		}
-		// In case of a timeout when reading the UA frame, a new alarm is setted up
-		// and a->counter is incremented. It pretty much works like calling the handler
-		// at the end of a send/receive pair
-	} while(a->counter < MAXTRANSMISSIONS);
-
-	return 1;
-}
-
-int llopen_receiver()
-{
-	// Setup the alarm structure and the alarm itself
-	if (!(a = new_alarm(alarm_handler, TIMEOUT)))
-		return 0;
-
-	set_alarm(a);
-    start_alarm(a);
-
-	// Begin transmission of supervision frame
-	do
-	{
-		if (send_supervision_frame(RECEIVER) != 1)
-			return 0;
-
-		if (receive_supervision_frame(RECEIVER))
+		if (receive_supervision_frame(device, frame))
 		{
 			stop_alarm();
 			break;
@@ -212,10 +178,8 @@ int llopen(const char *port, Device device)
 		return -1;
 
 	//NEED TO: Check for errors in each llopen helper
-    if (device == RECEIVER)
-		llopen_receiver();
-	else 
-		llopen_transmitter();
+	if (llopen_handshake(device, device == TRANSMITTER ? SET : UA))
+		return -1;
 
 	return fd;
 }

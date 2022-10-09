@@ -16,6 +16,8 @@ PortInfo *new_port(const char *, int);
 
 void delete_port(PortInfo *);
 
+int llopen_handshake(Device, Frame);
+
 int llopen(const char *, Device);
 
 int llclose(int);
