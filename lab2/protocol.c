@@ -105,33 +105,40 @@ int send_set_frame()
 
 	bytes = write(port->fd, setFrame, 5);
 	free(setFrame);
-
+	
+	bytes >= 0 
+		? printf("Sending SET frame\n") 
+		: printf("Couldn't send the SET frame\n");
 	return bytes;
 }
 
-int receive_set_frame()
+int receive_ua_frame()
 {
 	StateMachine* machine = new_state_machine(TRANSMITTER);
 	if (!machine)
-		return -1;
+		return 0;
 
 	while (machine->state != END)
 	{
 		if (!read(port->fd, &machine->byte, 1))
-			return -1;
+			return 0;
 
 		state_machine_multiplexer(machine);
 	}
 
-	return 0;
+	return 1;
 }
 
 
 
 void alarm_handler(int signal)
 {
-	a->isActive = FALSE;
+	#ifdef DEBUG
+		printf("Timeout #%d occured.\n", a->counter);
+	#endif
+
 	a->counter++;
+	alarm(a->timeout);
 }
 
 /**
@@ -143,22 +150,32 @@ void alarm_handler(int signal)
 	 */
 int llopen_transmitter()
 {
+	int aux;
 
-	if (send_set_frame() == -1)
-		return -1;
-
+	//Setup the alarm structure and the alarm itself
 	if (!(a = new_alarm(alarm_handler, TIMEOUT)))
 		return -1;
 
 	set_alarm(a);
-    while (a->counter < ATTEMPTS)
-    {
-        if (!a->isActive)
-        {
-            start_alarm(a);
-			//WAS HERE
-        }
-    }
+    start_alarm(a);
+
+	//Begin transmission of supervision frame
+	do
+	{
+		if (send_set_frame() == -1)
+			return -1;
+
+		if (receive_ua_frame())
+		{
+			stop_alarm();
+			break;
+		}
+		// In case of a timeout when reading the UA frame, a new alarm is setted up
+		// and a->counter is incremented. It pretty much works like calling the handler
+		// at the end of a send/receive pair
+	} while(a->counter < MAXTRANSMISSIONS);
+
+	return 1;
 
 	/**
 	 * @brief 
@@ -168,10 +185,10 @@ int llopen_transmitter()
 	 * 		Attempt to receive the response (UA);
 	 * 		If the number of attempts increases:
 	 * 			Initiate SET retransmission
-	 * When reaching ATTEMPTS, return -1;
+	 * When reaching MAXTRANSMISSIONS, return -1;
 	 */
 
-
+	return 0;
 }
 
 int llopen_receiver()
@@ -195,6 +212,14 @@ int llopen(const char *port, Device device)
 	return fd;
 }
 
+/**
+ * @brief 
+ * 
+ * 1 - Send the DISC frame to the receiver
+ * 2 - Read the DISC frame from the receiver 
+ * 3 - Send the UA frame to the receiver
+ * 4 - Reset the port configurations
+ */
 int llclose(int fd)
 {
 	return canonical_close(fd);

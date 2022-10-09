@@ -19,4 +19,6 @@ void set_alarm(Alarm *);
 
 void start_alarm(Alarm *);
 
+void stop_alarm();
+
 #endif

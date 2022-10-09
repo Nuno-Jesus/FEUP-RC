@@ -14,3 +14,10 @@ void print_error(char *message)
 	perror(message);
 	exit(-1);
 }
+
+void print_frame(unsigned char *data, size_t n)
+{
+	for(size_t i = 0; i < n; i++)
+		printf("0x%x ", data[i]);
+	printf("\n");
+}

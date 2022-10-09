@@ -26,5 +26,16 @@ void set_alarm(Alarm *alarm)
 void start_alarm(Alarm *a)
 {
 	alarm(a->timeout);
+	#ifdef DEBUG
+		printf("Started alarm with %lu seconds\n", a->timeout);
+	#endif
 	a->isActive = TRUE;
+}
+
+void stop_alarm()
+{
+	alarm(0);
+	#ifdef DEBUG
+		printf("Alarm stoped.\n");
+	#endif
 }

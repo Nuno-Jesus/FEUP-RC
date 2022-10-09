@@ -90,13 +90,13 @@ void wait_control_handler(StateMachine *machine)
 			machine->state = WAIT_ADDRESS;
 			break;
 		case CONTROL_SET:
-			if(machine->device == TRANSMITTER)
+			if(machine->device == RECEIVER)
 				machine->state = WAIT_BCC;
 			else
 				machine->state = START;
 			break;
 		case CONTROL_UA:
-			if(machine->device == RECEIVER)
+			if(machine->device == TRANSMITTER)
 				machine->state = WAIT_BCC;
 			else
 				machine->state = START;
@@ -115,13 +115,13 @@ void wait_bcc_handler(StateMachine *machine)
 			machine->state = WAIT_ADDRESS;
 			break;
 		case BCC_SET:
-			if(machine->device == TRANSMITTER)
+			if(machine->device == RECEIVER)
 				machine->state = WAIT_END_FLAG;
 			else
 				machine->state = START;
 			break;
 		case BCC_UA:
-			if(machine->device == RECEIVER)
+			if(machine->device == TRANSMITTER)
 				machine->state = WAIT_END_FLAG;
 			else
 				machine->state = START;

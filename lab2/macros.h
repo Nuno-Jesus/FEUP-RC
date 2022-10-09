@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+//#define DEBUG
+
 #define FLAG 0x7E
 #define ADDRESS 0x03
 #define CONTROL_SET 0x03
@@ -21,7 +23,7 @@
 #define BCC(c, a) c ^ a
 
 #define TIMEOUT 5
-#define ATTEMPTS 3
+#define MAXTRANSMISSIONS 3
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 // POSIX compliant source
