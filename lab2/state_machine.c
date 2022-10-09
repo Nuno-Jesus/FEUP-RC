@@ -1,6 +1,6 @@
 #include "state_machine.h"
 
-StateMachine *new_state_machine(Device device)
+StateMachine *new_state_machine(Device device, Frame frame)
 {
 	StateMachine *machine = (StateMachine *)malloc(sizeof(StateMachine));
 	if (machine == NULL)
@@ -8,6 +8,7 @@ StateMachine *new_state_machine(Device device)
 
 	machine->state = START;
 	machine->device = device;
+	machine->frame = frame;
 	machine->byte = 0x00;
 	machine->frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
 	if(!machine->frame){

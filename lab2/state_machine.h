@@ -13,6 +13,17 @@ typedef enum state_t
 	END
 } State;
 
+typedef enum frame_t
+{
+	SET,
+	UA,
+	RR00,
+	RR01,
+	REJ00,
+	REJ01,
+	DISC
+} Frame;
+
 typedef enum device_t
 {
 	RECEIVER,
@@ -22,13 +33,13 @@ typedef enum device_t
 typedef struct state_machine_t
 {
 	State state;
+	Frame frame;
 	Device device;
 	unsigned char *frame;
 	unsigned char byte;
 } StateMachine;
 
-
-StateMachine *new_state_machine(Device);
+StateMachine *new_state_machine(Device, Frame);
 
 void delete_state_machine(StateMachine *);
 
