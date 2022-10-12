@@ -42,7 +42,6 @@ typedef struct state_machine_t
 StateMachine *new_state_machine(Device, Frame);
 
 void delete_state_machine(StateMachine *);
-
 //! Handlers
 void state_machine_multiplexer(StateMachine *);
 

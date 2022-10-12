@@ -90,9 +90,9 @@ int canonical_open(const char *portname)
 
 int canonical_close(int fd)
 {
-	// Restore the old port settings
 	delete_port(port);
 
+	// Restore the old port settings
     if (tcsetattr(fd, TCSANOW, &port->oldtio) == -1)
    		print_error("tcsetattr()");
 
@@ -130,8 +130,6 @@ int receive_supervision_frame(Device device, Frame frame)
 	return 1;
 }
 
-
-
 void alarm_handler(int signal)
 {
 	#ifdef DEBUG
@@ -142,26 +140,48 @@ void alarm_handler(int signal)
 	alarm(a->timeout);
 }
 
-int llopen_handshake(Device device, Frame frame)
+int llopen_transmitter()
 {
-		// Setup the alarm structure and the alarm itself
-	if (!(a = new_alarm(alarm_handler, TIMEOUT)))
+	if (!send_supervision_frame(frame))
 		return 0;
 
-	set_alarm(a);
     start_alarm(a);
 
-	// Begin transmission of supervision frame
 	do
 	{
-		if (send_supervision_frame(frame) != 1)
-			return 0;
-
-		if (receive_supervision_frame(device, frame))
+		if (receive_supervision_frame(TRANSMITTER, UA))
 		{
 			stop_alarm();
 			break;
 		}
+		else
+			if (!send_supervision_frame(frame))
+				return 0;
+		// In case of a timeout when reading the UA frame, a new alarm is setted up
+		// and a->counter is incremented. It pretty much works like calling the handler
+		// at the end of a send/receive pair
+	} while(a->counter < MAXTRANSMISSIONS);
+
+	return 1;
+}
+
+int llopen_receiver()
+{
+	if (receive_supervision_frame(RECEIVER, frame) != 1)
+		return 0;
+
+    start_alarm(a);
+
+	do
+	{
+		if (send_supervision_frame(UA))
+		{
+			stop_alarm();
+			break;
+		}
+		else
+			if (!receive_supervision_frame(RECEIVER, frame))
+				return 0;
 		// In case of a timeout when reading the UA frame, a new alarm is setted up
 		// and a->counter is incremented. It pretty much works like calling the handler
 		// at the end of a send/receive pair
@@ -173,14 +193,22 @@ int llopen_handshake(Device device, Frame frame)
 int llopen(const char *port, Device device)
 {
 	int fd;
+	int ret;
 
 	if ((fd = canonical_open(port)) == -1)
 		return -1;
 
-	//NEED TO: Check for errors in each llopen helper
-	if (llopen_handshake(device, device == TRANSMITTER ? SET : UA))
-		return -1;
+	if (!(a = new_alarm(alarm_handler, TIMEOUT)))
+		return 0;
 
+	set_alarm(a);
+
+	ret = device == TRANSMITTER ? llopen_transmitter() : llopen_receiver();
+	if (ret == 0)
+	{
+		canonical_close();
+		return -1;
+	}
 	return fd;
 }
 
