@@ -13,13 +13,13 @@ typedef struct port_t
 	struct termios newtio;
 } PortInfo;
 
-PortInfo *new_port(const char *, int);
+PortInfo *new_port(char *, int);
 
 void delete_port(PortInfo *);
 
 int llopen(char *, Device);
 
-int llclose(int);
+int llclose(int, Device);
 
 int llwrite(int , char *, int);
 

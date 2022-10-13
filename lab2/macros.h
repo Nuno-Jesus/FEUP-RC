@@ -12,14 +12,25 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define DEBUG
+//#define DEBUG
 
 #define FLAG 0x7E
 #define ADDRESS 0x03
 #define CONTROL_SET 0x03
-#define CONTROL_UA 0x07
 #define BCC_SET CONTROL_SET ^ ADDRESS
+
+#define CONTROL_UA 0x07
 #define BCC_UA CONTROL_UA ^ ADDRESS
+
+#define CONTROL_DISC 0x11
+#define BCC_DISC CONTROL_DISC ^ ADDRESS
+
+#define CONTROL_RR 0x05
+#define BCC_RR CONTROL_RR ^ ADDRESS
+
+#define CONTROL_REJ 0x01
+#define BCC_REJ CONTROL_REJ ^ ADDRESS
+
 #define BCC(c, a) c ^ a
 
 #define TRANSMITTER_PORT "/dev/ttyS5"

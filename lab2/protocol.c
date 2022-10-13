@@ -3,14 +3,14 @@
 PortInfo *port;
 Alarm *a;
 
-PortInfo *new_port(const char *name, int fd)
+PortInfo *new_port(char *name, int fd)
 {
 	PortInfo *port = (PortInfo *)malloc(sizeof(PortInfo));
 	if (!port)
 		return NULL;
 
 	port->fd = fd;
-	port->name = (char *)name;
+	port->name = name;
 	memset(&port->oldtio, 0, sizeof(port->oldtio));
 	memset(&port->newtio, 0, sizeof(port->newtio));
 	
@@ -19,11 +19,12 @@ PortInfo *new_port(const char *name, int fd)
 
 void delete_port(PortInfo *port)
 {
-	free(port->name);
+	
+	//free(port->name);
 	free(port);
 }
 
-unsigned char *get_open_frame(Frame f)
+unsigned char *assemble_frame(Frame f)
 {
 	unsigned char *frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
 	if (!frame)
@@ -32,8 +33,21 @@ unsigned char *get_open_frame(Frame f)
 	frame[0] = FLAG;
 	frame[1] = ADDRESS;
 	//Apply switch to further cases of other supervision frames
-	frame[2] = f == SET ? CONTROL_SET : CONTROL_UA;
-	frame[3] = f == SET ? BCC_SET : BCC_UA;
+	switch(f)
+	{
+		case SET:
+			frame[2] = CONTROL_SET;
+			frame[3] = BCC_SET;
+			break;
+		case UA:
+			frame[2] = CONTROL_UA;
+			frame[3] = BCC_UA;
+			break;
+		case DISC:
+			frame[2] = CONTROL_DISC;
+			frame[3] = BCC_DISC;
+			break;
+	}
 	frame[4] = FLAG;
 
 	return frame;
@@ -89,12 +103,11 @@ int canonical_open(char *portname)
 
 int canonical_close(int fd)
 {
-	delete_port(port);
-
 	// Restore the port->oldtio port settings
     if (tcsetattr(fd, TCSANOW, &port->oldtio) == -1)
    		print_error("tcsetattr()");
 
+	delete_port(port);
     close(fd);
 
 	return 1;
@@ -103,7 +116,7 @@ int canonical_close(int fd)
 int send_supervision_frame(Frame f)
 {
 	ssize_t bytes;
-	unsigned char *frame = get_open_frame(f);
+	unsigned char *frame = assemble_frame(f);
 
 	bytes = write(port->fd, frame, 5);
 	free(frame);
@@ -226,10 +239,78 @@ int llopen(char *port, Device device)
  * 3 - Send the UA frame to the receiver
  * 4 - Reset the port configurations
  */
-int llclose(int fd)
+
+
+int llclose_receiver()
 {
-	return canonical_close(fd);
+    if (!receive_supervision_frame(RECEIVER,DISC))
+        return 0;
+
+	start_alarm(a);
+    
+	do
+    {
+        printf("Sending DISC frame.\n");
+        if (send_supervision_frame(DISC))
+        {
+            printf("Received DISC frame.\n");
+            stop_alarm();
+            break;
+        }
+        else
+            if (!receive_supervision_frame(RECEIVER,DISC))
+                return 0;
+        // In case of a timeout when reading the UA frame, a new alarm is setted up
+        // and a->counter is incremented. It pretty much works like calling the handler
+        // at the end of a send/receive pair
+    } while(a->counter < MAXTRANSMISSIONS);
+
+
+    return 1;
 }
+
+int llclose_transmitter()
+{
+    if (!send_supervision_frame(DISC))
+        return 0;
+    
+    start_alarm(a);
+
+    do
+    {
+        printf("Sending DISC frame.\n");
+        if (receive_supervision_frame(TRANSMITTER, DISC))
+        {
+            printf("Received DISC frame.\n");
+            stop_alarm();
+            break;
+        }
+        else
+            if (!send_supervision_frame(DISC))
+                return 0;
+        // In case of a timeout when reading the UA frame, a new alarm is setted up
+        // and a->counter is incremented. It pretty much works like calling the handler
+        // at the end of a send/receive pair
+    } while(a->counter < MAXTRANSMISSIONS);
+
+    if(!send_supervision_frame(UA))
+        return 0;
+	printf("Sending UA frame.");
+    return 1;
+    
+}
+
+int llclose(int fd, Device device)
+{    
+    int ret;
+
+    //set_alarm(a);
+
+    ret = device == TRANSMITTER ? llclose_transmitter() : llclose_receiver();
+
+    return canonical_close(fd);
+}
+
 
 int llwrite(int fd, char *buffer, int length)
 {

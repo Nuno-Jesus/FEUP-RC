@@ -18,7 +18,11 @@ int main(int argc, char *argv[])
     
 	int fd;
 	if ((fd = llopen(RECEIVER_PORT, RECEIVER)) == -1)
-		printf("Couldn't salute receiver\n");
+		printf("Couldn't salute transmitter\n");
+	
+	if ((fd = llclose(fd, RECEIVER)) == -1)
+		printf("Couldn't close receiver connection\n");
 
+	printf("Gracefully ending.\n");
     return 0;
 }

@@ -102,6 +102,9 @@ void wait_control_handler(StateMachine *machine)
 			else
 				machine->state = START;
 			break;
+		case CONTROL_DISC:
+			machine->state = WAIT_BCC;
+			break;
 		default:
 			machine->state = START;
 			break;
@@ -126,6 +129,9 @@ void wait_bcc_handler(StateMachine *machine)
 				machine->state = WAIT_END_FLAG;
 			else
 				machine->state = START;
+			break;
+		case BCC_DISC:
+			machine->state = WAIT_END_FLAG;
 			break;
 		default:
 			machine->state = START;
