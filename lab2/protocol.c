@@ -10,7 +10,7 @@ PortInfo *new_port(const char *name, int fd)
 		return NULL;
 
 	port->fd = fd;
-	port->name = name;
+	port->name = (char *)name;
 	memset(&port->oldtio, 0, sizeof(port->oldtio));
 	memset(&port->newtio, 0, sizeof(port->newtio));
 	
@@ -39,10 +39,9 @@ unsigned char *get_open_frame(Frame f)
 	return frame;
 }
 
-int canonical_open(const char *portname)
+int canonical_open(char *portname)
 {
 	int fd;
-    PortInfo *port;
 
 	if ((fd = open(portname, O_RDWR | O_NOCTTY)) < 0)
 		print_error(portname);
@@ -92,17 +91,19 @@ int canonical_close(int fd)
 {
 	delete_port(port);
 
-	// Restore the old port settings
+	// Restore the port->oldtio port settings
     if (tcsetattr(fd, TCSANOW, &port->oldtio) == -1)
    		print_error("tcsetattr()");
 
     close(fd);
+
+	return 1;
 }
 
-int send_supervision_frame(Frame frame)
+int send_supervision_frame(Frame f)
 {
 	ssize_t bytes;
-	unsigned char *frame = get_open_frame(frame);
+	unsigned char *frame = get_open_frame(f);
 
 	bytes = write(port->fd, frame, 5);
 	free(frame);
@@ -142,20 +143,23 @@ void alarm_handler(int signal)
 
 int llopen_transmitter()
 {
-	if (!send_supervision_frame(frame))
+	if (!send_supervision_frame(SET))
 		return 0;
+	
 
     start_alarm(a);
 
 	do
 	{
+		printf("Sending SET frame.\n");
 		if (receive_supervision_frame(TRANSMITTER, UA))
 		{
+			printf("REceived UA frame.\n");
 			stop_alarm();
 			break;
 		}
 		else
-			if (!send_supervision_frame(frame))
+			if (!send_supervision_frame(SET))
 				return 0;
 		// In case of a timeout when reading the UA frame, a new alarm is setted up
 		// and a->counter is incremented. It pretty much works like calling the handler
@@ -167,20 +171,22 @@ int llopen_transmitter()
 
 int llopen_receiver()
 {
-	if (receive_supervision_frame(RECEIVER, frame) != 1)
+	if (!receive_supervision_frame(RECEIVER, SET))
 		return 0;
 
     start_alarm(a);
 
 	do
 	{
+		printf("Received SET frame.\n");
 		if (send_supervision_frame(UA))
 		{
+			printf("Sending UA frame.\n");
 			stop_alarm();
 			break;
 		}
 		else
-			if (!receive_supervision_frame(RECEIVER, frame))
+			if (!receive_supervision_frame(RECEIVER, SET))
 				return 0;
 		// In case of a timeout when reading the UA frame, a new alarm is setted up
 		// and a->counter is incremented. It pretty much works like calling the handler
@@ -190,7 +196,7 @@ int llopen_receiver()
 	return 1;
 }
 
-int llopen(const char *port, Device device)
+int llopen(char *port, Device device)
 {
 	int fd;
 	int ret;
@@ -206,7 +212,7 @@ int llopen(const char *port, Device device)
 	ret = device == TRANSMITTER ? llopen_transmitter() : llopen_receiver();
 	if (ret == 0)
 	{
-		canonical_close();
+		canonical_close(fd);
 		return -1;
 	}
 	return fd;

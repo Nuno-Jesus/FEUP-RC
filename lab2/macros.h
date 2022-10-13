@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-//#define DEBUG
+#define DEBUG
 
 #define FLAG 0x7E
 #define ADDRESS 0x03
@@ -22,7 +22,10 @@
 #define BCC_UA CONTROL_UA ^ ADDRESS
 #define BCC(c, a) c ^ a
 
-#define TIMEOUT 5
+#define TRANSMITTER_PORT "/dev/ttyS5"
+#define RECEIVER_PORT "/dev/ttyS0"
+
+#define TIMEOUT 3
 #define MAXTRANSMISSIONS 3
 
 #define BAUDRATE B38400
@@ -33,6 +36,6 @@
 
 #define BUF_SIZE 256
 
-volatile int STOP = FALSE;
+//volatile int STOP = FALSE;
 
 #endif

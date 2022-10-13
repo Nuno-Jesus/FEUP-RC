@@ -3,6 +3,7 @@
 
 #include "state_machine.h"
 #include "alarm.h"
+#include "utils.h"
 
 typedef struct port_t
 {
@@ -16,9 +17,7 @@ PortInfo *new_port(const char *, int);
 
 void delete_port(PortInfo *);
 
-int llopen_handshake(Device, Frame);
-
-int llopen(const char *, Device);
+int llopen(char *, Device);
 
 int llclose(int);
 

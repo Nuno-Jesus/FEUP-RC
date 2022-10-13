@@ -10,6 +10,8 @@ Alarm *new_alarm(void (*handler)(int), unsigned int timeout)
 	alarm->isActive = FALSE;
 	alarm->timeout = timeout;
 	alarm->handler = handler;
+
+	return alarm;
 }
 
 void delete_alarm(Alarm *alarm)

@@ -10,8 +10,8 @@ StateMachine *new_state_machine(Device device, Frame frame)
 	machine->device = device;
 	machine->frame = frame;
 	machine->byte = 0x00;
-	machine->frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
-	if(!machine->frame){
+	machine->currentFrame = (unsigned char *)malloc(5 * sizeof(unsigned char));
+	if(!machine->currentFrame){
 		delete_state_machine(machine);
 		return NULL;
 	}
@@ -24,8 +24,8 @@ void delete_state_machine(StateMachine *machine)
 	if(!machine)
 		return;
 	
-	if(machine->frame)
-		free(machine->frame);
+	if(machine->currentFrame)
+		free(machine->currentFrame);
 	
 	free(machine);
 }

@@ -35,7 +35,7 @@ typedef struct state_machine_t
 	State state;
 	Frame frame;
 	Device device;
-	unsigned char *frame;
+	unsigned char *currentFrame;
 	unsigned char byte;
 } StateMachine;
 
