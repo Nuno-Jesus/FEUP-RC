@@ -6,13 +6,13 @@
 typedef struct state_machine_t
 {
 	State state;
-	Frame expectedFrame;
+	FrameControl controlField;
 	Device device;
-	unsigned char *currentFrame;
+	unsigned char *frame;
 	unsigned char byte;
 } StateMachine;
 
-StateMachine *new_state_machine(Device, Frame);
+StateMachine *new_state_machine(Device, FrameControl);
 
 void delete_state_machine(StateMachine *);
 //! Handlers

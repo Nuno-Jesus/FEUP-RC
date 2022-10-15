@@ -83,10 +83,10 @@ int canonical_close(int fd)
 	return 1;
 }
 
-int send_supervision_frame(Frame f)
+int send_supervision_frame(FrameControl field)
 {
 	ssize_t bytes;
-	unsigned char *frame = assemble_supervision_frame(f);
+	unsigned char *frame = assemble_supervision_frame(field);
 
 	bytes = write(port->fd, frame, 5);
 	free(frame);
@@ -97,9 +97,9 @@ int send_supervision_frame(Frame f)
 	return bytes;
 }
 
-int receive_supervision_frame(Device device, Frame frame)
+int receive_supervision_frame(Device device, FrameControl field)
 {
-	StateMachine* machine = new_state_machine(device, frame);
+	StateMachine* machine = new_state_machine(device, field);
 	if (!machine)
 		return 0;
 
@@ -114,7 +114,7 @@ int receive_supervision_frame(Device device, Frame frame)
 	return 1;
 }
 
-unsigned char *assemble_supervision_frame(Frame f)
+unsigned char *assemble_supervision_frame(FrameControl field)
 {
 	unsigned char *frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
 	if (!frame)
@@ -123,7 +123,7 @@ unsigned char *assemble_supervision_frame(Frame f)
 	frame[0] = FLAG;
 	frame[1] = ADDRESS;
 	//Apply switch to further cases of other supervision frames
-	switch(f)
+	switch(field)
 	{
 		case SET:
 			frame[2] = CONTROL_SET;

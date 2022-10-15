@@ -24,7 +24,6 @@ int llopen(char *port, Device device)
 	return fd;
 }
 
-
 int llclose(int fd, Device device)
 {    
     int ret;
@@ -48,7 +47,6 @@ int llopen_transmitter()
 	if (!send_supervision_frame(SET))
 		return 0;
 	
-
     start_alarm(a);
 
 	do
@@ -152,8 +150,7 @@ int llclose_transmitter()
 
     if(!send_supervision_frame(UA))
         return 0;
-		
-	printf("Sending UA frame.");
+
+	printf("Sending UA frame.\n");
     return 1;
-    
 }

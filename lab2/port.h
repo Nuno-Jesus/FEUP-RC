@@ -20,10 +20,10 @@ int canonical_open(char *);
 
 int canonical_close(int);
 
-int send_supervision_frame(Frame);
+int send_supervision_frame(FrameControl);
 
-int receive_supervision_frame(Device, Frame);
+int receive_supervision_frame(Device, FrameControl);
 
-unsigned char *assemble_supervision_frame(Frame);
+unsigned char *assemble_supervision_frame(FrameControl);
 
 #endif

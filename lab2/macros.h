@@ -22,7 +22,7 @@ typedef enum state_t
 	END
 } State;
 
-typedef enum frame_t
+typedef enum frame_control_t
 {
 	SET,
 	UA,
@@ -31,7 +31,14 @@ typedef enum frame_t
 	REJ00,
 	REJ01,
 	DISC
-} Frame;
+} FrameControl;
+
+typedef enum packet_control_t
+{
+	DATA,
+	START,
+	END
+} PacketControl;
 
 typedef enum device_t
 {
