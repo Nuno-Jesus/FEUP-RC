@@ -149,7 +149,6 @@ int llclose(int fd, Device device)
     return canonical_close(fd);
 }
 
-
 int llwrite(int fd, char *buffer, int length)
 {
 	return -1;

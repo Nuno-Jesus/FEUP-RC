@@ -5,7 +5,6 @@
 
 typedef struct alarm_h
 {
-	int isActive;
 	unsigned int counter;
 	unsigned int timeout;
 	void (*handler)(int);
@@ -15,7 +14,7 @@ Alarm *new_alarm(void (*)(int), unsigned int);
 
 void delete_alarm(Alarm *);
 
-void set_alarm(Alarm *);
+void set_alarm();
 
 void start_alarm(Alarm *);
 

@@ -19,7 +19,6 @@ Alarm *new_alarm(void (*handler)(int), unsigned int timeout)
 		return NULL;
 
 	alarm->counter = 0;
-	alarm->isActive = FALSE;
 	alarm->timeout = timeout;
 	alarm->handler = !handler ? default_handler : handler;
 
@@ -33,7 +32,6 @@ void delete_alarm(Alarm *alarm)
 
 void set_alarm()
 {
-	a->isActive = TRUE;
 	(void)signal(SIGALRM, a->handler);
 }
 
@@ -43,7 +41,6 @@ void start_alarm(Alarm *a)
 	#ifdef DEBUG
 		printf("Started alarm with %lu seconds\n", a->timeout);
 	#endif
-	a->isActive = TRUE;
 }
 
 void stop_alarm()

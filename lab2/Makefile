@@ -2,7 +2,7 @@ CC = gcc
 FLAGS =
 DEPS = .
 
-TARGET = alarm.o protocol.o state_machine.o utils.o
+TARGET = alarm.o port.o protocol.o state_machine.o utils.o
 NAME = project
 
 %.o : %.c 
