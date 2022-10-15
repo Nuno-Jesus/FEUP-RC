@@ -1,5 +1,17 @@
 #include "alarm.h"
 
+Alarm *a;
+
+void default_handler(int signal)
+{
+	#ifdef DEBUG
+		printf("Timeout #%d occured.\n", a->counter);
+	#endif
+
+	a->counter++;
+	alarm(a->timeout);
+}
+
 Alarm *new_alarm(void (*handler)(int), unsigned int timeout)
 {
 	Alarm *alarm = (Alarm *)malloc(sizeof(Alarm));
@@ -9,7 +21,7 @@ Alarm *new_alarm(void (*handler)(int), unsigned int timeout)
 	alarm->counter = 0;
 	alarm->isActive = FALSE;
 	alarm->timeout = timeout;
-	alarm->handler = handler;
+	alarm->handler = !handler ? default_handler : handler;
 
 	return alarm;
 }
@@ -19,10 +31,10 @@ void delete_alarm(Alarm *alarm)
 	free(alarm);
 }
 
-void set_alarm(Alarm *alarm)
+void set_alarm()
 {
-	alarm->isActive = TRUE;
-	(void)signal(SIGALRM, alarm->handler);
+	a->isActive = TRUE;
+	(void)signal(SIGALRM, a->handler);
 }
 
 void start_alarm(Alarm *a)
@@ -38,6 +50,6 @@ void stop_alarm()
 {
 	alarm(0);
 	#ifdef DEBUG
-		printf("Alarm stoped.\n");
+		printf("Alarm stopped.\n");
 	#endif
 }

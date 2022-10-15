@@ -12,6 +12,33 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+typedef enum state_t
+{
+	START,
+	WAIT_ADDRESS,
+	WAIT_CONTROL,
+	WAIT_BCC,
+	WAIT_END_FLAG,
+	END
+} State;
+
+typedef enum frame_t
+{
+	SET,
+	UA,
+	RR00,
+	RR01,
+	REJ00,
+	REJ01,
+	DISC
+} Frame;
+
+typedef enum device_t
+{
+	RECEIVER,
+    TRANSMITTER
+} Device;
+
 //#define DEBUG
 
 #define FLAG 0x7E

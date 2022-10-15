@@ -3,33 +3,6 @@
 
 #include "macros.h"
 
-typedef enum state_t
-{
-	START,
-	WAIT_ADDRESS,
-	WAIT_CONTROL,
-	WAIT_BCC,
-	WAIT_END_FLAG,
-	END
-} State;
-
-typedef enum frame_t
-{
-	SET,
-	UA,
-	RR00,
-	RR01,
-	REJ00,
-	REJ01,
-	DISC
-} Frame;
-
-typedef enum device_t
-{
-	RECEIVER,
-    TRANSMITTER
-} Device;
-
 typedef struct state_machine_t
 {
 	State state;
