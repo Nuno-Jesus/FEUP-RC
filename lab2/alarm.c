@@ -2,16 +2,6 @@
 
 Alarm *a;
 
-void default_handler(int signal)
-{
-	#ifdef DEBUG
-		printf("Timeout #%d occured.\n", a->counter);
-	#endif
-
-	a->counter++;
-	alarm(a->timeout);
-}
-
 Alarm *new_alarm(void (*handler)(int), unsigned int timeout)
 {
 	Alarm *alarm = (Alarm *)malloc(sizeof(Alarm));
@@ -49,4 +39,14 @@ void stop_alarm()
 	#ifdef DEBUG
 		printf("Alarm stopped.\n");
 	#endif
+}
+
+void default_handler(int signal)
+{
+	#ifdef DEBUG
+		printf("Timeout #%d occured.\n", a->counter);
+	#endif
+
+	a->counter++;
+	alarm(a->timeout);
 }

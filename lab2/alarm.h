@@ -20,4 +20,6 @@ void start_alarm(Alarm *);
 
 void stop_alarm();
 
+void default_handler(int);
+
 #endif

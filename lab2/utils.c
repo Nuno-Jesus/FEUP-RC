@@ -18,6 +18,6 @@ void print_error(char *message)
 void print_frame(unsigned char *data, size_t n)
 {
 	for(size_t i = 0; i < n; i++)
-		printf("0x%x ", data[i]);
+		printf("%ld - 0x%x\n", i, data[i]);
 	printf("\n");
 }

@@ -2,6 +2,47 @@
 
 extern Alarm* a;
 
+int llopen(char *port, Device device)
+{
+	int fd;
+	int ret;
+
+	if ((fd = canonical_open(port)) == -1)
+		return -1;
+
+	if (!(a = new_alarm(NULL, TIMEOUT)))
+		return 0;
+
+	set_alarm(a);
+
+	ret = device == TRANSMITTER ? llopen_transmitter() : llopen_receiver();
+	if (ret == 0)
+	{
+		canonical_close(fd);
+		return -1;
+	}
+	return fd;
+}
+
+
+int llclose(int fd, Device device)
+{    
+    int ret;
+    
+	ret = device == TRANSMITTER ? llclose_transmitter() : llclose_receiver();
+    return canonical_close(fd);
+}
+
+int llwrite(int fd, char *buffer, int length)
+{
+	return -1;
+}
+
+int llread(int fd, char *buffer)
+{
+	return -1;
+}
+
 int llopen_transmitter()
 {
 	if (!send_supervision_frame(SET))
@@ -57,27 +98,6 @@ int llopen_receiver()
 	return 1;
 }
 
-int llopen(char *port, Device device)
-{
-	int fd;
-	int ret;
-
-	if ((fd = canonical_open(port)) == -1)
-		return -1;
-
-	if (!(a = new_alarm(NULL, TIMEOUT)))
-		return 0;
-
-	set_alarm(a);
-
-	ret = device == TRANSMITTER ? llopen_transmitter() : llopen_receiver();
-	if (ret == 0)
-	{
-		canonical_close(fd);
-		return -1;
-	}
-	return fd;
-}
 
 int llclose_receiver()
 {
@@ -88,10 +108,10 @@ int llclose_receiver()
     
 	do
     {
-        printf("Sending DISC frame.\n");
+        printf("Received DISC frame.\n");
         if (send_supervision_frame(DISC))
         {
-            printf("Received DISC frame.\n");
+            printf("Sending DISC frame.\n");
             stop_alarm();
             break;
         }
@@ -102,7 +122,6 @@ int llclose_receiver()
         // and a->counter is incremented. It pretty much works like calling the handler
         // at the end of a send/receive pair
     } while(a->counter < MAXTRANSMISSIONS);
-
 
     return 1;
 }
@@ -133,28 +152,8 @@ int llclose_transmitter()
 
     if(!send_supervision_frame(UA))
         return 0;
+		
 	printf("Sending UA frame.");
     return 1;
     
-}
-
-int llclose(int fd, Device device)
-{    
-    int ret;
-
-    //set_alarm(a);
-
-    ret = device == TRANSMITTER ? llclose_transmitter() : llclose_receiver();
-
-    return canonical_close(fd);
-}
-
-int llwrite(int fd, char *buffer, int length)
-{
-	return -1;
-}
-
-int llread(int fd, char *buffer)
-{
-	return -1;
 }
