@@ -33,7 +33,7 @@ typedef enum device_t
 typedef struct state_machine_t
 {
 	State state;
-	Frame frame;
+	Frame expectedFrame;
 	Device device;
 	unsigned char *currentFrame;
 	unsigned char byte;

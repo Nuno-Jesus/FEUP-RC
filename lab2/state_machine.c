@@ -8,7 +8,7 @@ StateMachine *new_state_machine(Device device, Frame frame)
 
 	machine->state = START;
 	machine->device = device;
-	machine->frame = frame;
+	machine->expectedFrame = frame;
 	machine->byte = 0x00;
 	machine->currentFrame = (unsigned char *)malloc(5 * sizeof(unsigned char));
 	if(!machine->currentFrame){

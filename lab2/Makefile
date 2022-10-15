@@ -1,19 +1,19 @@
 CC = gcc
-FLAGS = -Wall -Wextra -Werror
+FLAGS =
 DEPS = .
 
-TARGET = alarm.c protocol.c state_machine.c utils.c
-NAME = project #Mudar depois
+TARGET = alarm.o protocol.o state_machine.o utils.o
+NAME = project
 
 %.o : %.c 
 	$(CC) $(FLAGS) -c $< -o $@ -I $(DEPS)
 
 all: receiver transmitter
 
-receiver:
+receiver: $(TARGET)
 	$(CC) $(FLAGS) receiver.c -o $(NAME) $(TARGET) -I $(DEPS)
 
-transmitter: 
+transmitter: $(TARGET)
 	$(CC) $(FLAGS) transmitter.c -o $(NAME) $(TARGET) -I $(DEPS)
 
 clean:
@@ -23,4 +23,6 @@ fclean: clean
 	rm -f $(NAME)
 
 re: fclean all
+
+
 	

@@ -1,11 +1,11 @@
 #include "protocol.h"
 
-PortInfo *port;
+PortSettings *port;
 Alarm *a;
 
-PortInfo *new_port(char *name, int fd)
+PortSettings *new_port(char *name, int fd)
 {
-	PortInfo *port = (PortInfo *)malloc(sizeof(PortInfo));
+	PortSettings *port = (PortSettings *)malloc(sizeof(PortSettings));
 	if (!port)
 		return NULL;
 
@@ -17,40 +17,11 @@ PortInfo *new_port(char *name, int fd)
 	return port;
 }
 
-void delete_port(PortInfo *port)
+void delete_port(PortSettings *port)
 {
 	
 	//free(port->name);
 	free(port);
-}
-
-unsigned char *assemble_frame(Frame f)
-{
-	unsigned char *frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
-	if (!frame)
-		return NULL;
-
-	frame[0] = FLAG;
-	frame[1] = ADDRESS;
-	//Apply switch to further cases of other supervision frames
-	switch(f)
-	{
-		case SET:
-			frame[2] = CONTROL_SET;
-			frame[3] = BCC_SET;
-			break;
-		case UA:
-			frame[2] = CONTROL_UA;
-			frame[3] = BCC_UA;
-			break;
-		case DISC:
-			frame[2] = CONTROL_DISC;
-			frame[3] = BCC_DISC;
-			break;
-	}
-	frame[4] = FLAG;
-
-	return frame;
 }
 
 int canonical_open(char *portname)
@@ -116,7 +87,7 @@ int canonical_close(int fd)
 int send_supervision_frame(Frame f)
 {
 	ssize_t bytes;
-	unsigned char *frame = assemble_frame(f);
+	unsigned char *frame = assemble_supervision_frame(f);
 
 	bytes = write(port->fd, frame, 5);
 	free(frame);
@@ -142,6 +113,35 @@ int receive_supervision_frame(Device device, Frame frame)
 	}
 
 	return 1;
+}
+
+unsigned char *assemble_supervision_frame(Frame f)
+{
+	unsigned char *frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
+	if (!frame)
+		return NULL;
+
+	frame[0] = FLAG;
+	frame[1] = ADDRESS;
+	//Apply switch to further cases of other supervision frames
+	switch(f)
+	{
+		case SET:
+			frame[2] = CONTROL_SET;
+			frame[3] = BCC_SET;
+			break;
+		case UA:
+			frame[2] = CONTROL_UA;
+			frame[3] = BCC_UA;
+			break;
+		case DISC:
+			frame[2] = CONTROL_DISC;
+			frame[3] = BCC_DISC;
+			break;
+	}
+	frame[4] = FLAG;
+
+	return frame;
 }
 
 void alarm_handler(int signal)
@@ -230,16 +230,6 @@ int llopen(char *port, Device device)
 	}
 	return fd;
 }
-
-/**
- * @brief 
- * 
- * 1 - Send the DISC frame to the receiver
- * 2 - Read the DISC frame from the receiver 
- * 3 - Send the UA frame to the receiver
- * 4 - Reset the port configurations
- */
-
 
 int llclose_receiver()
 {
