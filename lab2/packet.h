@@ -15,6 +15,6 @@ void delete_packet(Packet *);
 
 Packet *assemble_data_packet(unsigned char *, int);
 
-Packet *assemble_control_packet(char *, unsigned char);
+Packet *assemble_control_packet(char *, PacketControl);
 
 #endif
