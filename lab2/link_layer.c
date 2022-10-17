@@ -1,5 +1,6 @@
-#include "protocol.h"
+#include "link_layer.h"
 
+LinkLayer *link;
 extern Alarm* a;
 
 int llopen(char *port, Device device)
@@ -24,6 +25,7 @@ int llopen(char *port, Device device)
 	return fd;
 }
 
+//Needs to free the memory
 int llclose(int fd, Device device)
 {    
     int ret;
