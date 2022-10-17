@@ -21,3 +21,35 @@ void print_frame(unsigned char *data, size_t n)
 		printf("%ld - 0x%x\n", i, data[i]);
 	printf("\n");
 }
+
+unsigned char *tobytes(unsigned long n)
+{	
+	int size = 0;
+	unsigned char *res = NULL;
+
+	while (n > 0)
+	{
+		res = realloc(res, ++size);
+		res[size - 1] = n % 256;
+		n /= 256;
+	}
+
+	res = realloc(res, ++size);
+	res[size - 1] = '\0';
+	return strrev(res);
+}
+
+unsigned char *strrev(unsigned char *str)
+{
+	int len;
+	char aux;
+
+	len = strlen((char*)str);
+	for(int i = 0; i < len / 2; i++)
+	{
+		aux = str[i];
+		str[i] = str[len - 1 - i];
+		str[len - 1 - i] = aux;
+	}
+	return (str);
+}

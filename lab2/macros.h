@@ -35,9 +35,9 @@ typedef enum frame_control_t
 
 typedef enum packet_control_t
 {
-	DATA,
-	START,
-	END
+	DATA_PACKET,
+	START_PACKET,
+	END_PACKET
 } PacketControl;
 
 typedef enum device_t

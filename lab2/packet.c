@@ -14,7 +14,8 @@ Packet *new_packet(unsigned char control)
 
 void delete_packet(Packet *packet)
 {
-	free(packet->frame);
+	if (packet->frame)
+		free(packet->frame);
 	free(packet);
 }
 
@@ -25,18 +26,29 @@ Packet *assemble_data_packet(unsigned char *data, int size)
 
 Packet *assemble_control_packet(char *filename, PacketControl control)
 {
-	int filesize;
-	int framesize;
+	/* int framesize;
 	Packet *packet;
-	struct stat buf;
+	unsigned long filesize;
+	unsigned char *fileSizeBytes;
 
 	if (!(packet = new_packet(control)))
 		return NULL;
 
-	if ((stat(filename, &buf)) == -1)
+	filesize = get_file_size(filename);
+	fileSizeBytes = tobytes(filesize);
+	framesize = 2 + strlen((char *)fileSizeBytes) + 2 + strlen(filename);
+
+	if (!(packet->frame = (char *)malloc(framesize)))
+	{
+		delete_packet(packet);
 		return NULL;
+	}
 
-	filesize = buf.st_size;
+	packet->frame[0] = control;
+	packet->frame[1] = strlen((char *)fileSizeBytes);
+	
 
-	return packet;
+	return packet; */
+
+	return NULL;
 }

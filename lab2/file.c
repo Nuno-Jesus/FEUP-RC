@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "file.h"
 
-char *get_file_content(unsigned char *filename)
+char *get_file_content(char *filename)
 {
     char *buffer;
 
@@ -28,16 +28,12 @@ char *get_file_content(unsigned char *filename)
     return buffer;
 }
 
-unsigned long get_file_size(unsigned char *filename)
+unsigned long get_file_size(char *filename)
 {
-    FILE *f = fopen(filename, "r");
-    if (f == NULL)
-    {
-        printf("Error opening file.\n");
-        return 0;
-    }
+	struct stat buf; 
 
-    fseek(f, 0, SEEK_END);
+    if ((stat(filename, &buf)) == -1)
+		return 0;
 
-    return (unsigned long)ftell(f);
+	return (unsigned long) buf.st_size;
 }

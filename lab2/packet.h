@@ -2,6 +2,7 @@
 #define PACKET_H
 
 #include "utils.h"
+#include "file.h"
 
 typedef struct packet_t
 {

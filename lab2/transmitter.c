@@ -10,15 +10,12 @@
 #include "macros.h"
 #include "utils.h"
 #include "protocol.h"
+#include "app_layer.h"
 
 int main(int argc, char *argv[])
 {   
-	int fd;
-	if ((fd = llopen(TRANSMITTER_PORT, TRANSMITTER)) == -1)
-		printf("Couldn't salute receiver\n");
-
-	if ((fd = llclose(fd, TRANSMITTER)) == -1)
-		printf("Couldn't close transmitter connection\n");
+	if (!send_file(TRANSMITTER_PORT, argv[1]))
+		print_error("send_file(): error\n");
 
 	printf("Gracefully ending.\n");
 
