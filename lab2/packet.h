@@ -7,6 +7,7 @@
 typedef struct packet_t
 {
 	PacketControl control;
+	unsigned long size;
 	unsigned char *frame;
 } Packet;
 

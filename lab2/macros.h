@@ -35,8 +35,8 @@ typedef enum frame_control_t
 
 typedef enum packet_control_t
 {
-	DATA_PACKET,
 	START_PACKET,
+	DATA_PACKET,
 	END_PACKET
 } PacketControl;
 
@@ -50,6 +50,7 @@ typedef enum device_t
 
 #define FLAG 0x7E
 #define ADDRESS 0x03
+
 #define CONTROL_SET 0x03
 #define BCC_SET CONTROL_SET ^ ADDRESS
 
@@ -59,13 +60,14 @@ typedef enum device_t
 #define CONTROL_DISC 0x11
 #define BCC_DISC CONTROL_DISC ^ ADDRESS
 
-#define CONTROL_RR 0x05
-#define BCC_RR CONTROL_RR ^ ADDRESS
+#define CONTROL_RR(s) (s << 8 | 0x05)
+#define BCC_RR(s) CONTROL_RR(s) ^ ADDRESS
 
-#define CONTROL_REJ 0x01
-#define BCC_REJ CONTROL_REJ ^ ADDRESS
+#define CONTROL_REJ(s) (s << 8 | 0x01)
+#define BCC_REJ(s) CONTROL_REJ(s) ^ ADDRESS
 
 #define BCC(c, a) c ^ a
+#define SEQ(s) s << 7
 
 #define TRANSMITTER_PORT "/dev/ttyS5"
 #define RECEIVER_PORT "/dev/ttyS0"

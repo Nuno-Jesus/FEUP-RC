@@ -3,7 +3,7 @@
 
 #include "utils.h"
 #include "file.h"
-#include "protocol.h"
+#include "link_layer.h"
 
 /**
  * @brief Sends a given file through a serial port

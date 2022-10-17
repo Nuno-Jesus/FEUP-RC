@@ -9,7 +9,7 @@
 
 #include "macros.h"
 #include "utils.h"
-#include "protocol.h"
+#include "link_layer.h"
 #include "app_layer.h"
 
 int main(int argc, char *argv[])

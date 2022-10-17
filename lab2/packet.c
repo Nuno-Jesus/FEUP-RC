@@ -7,6 +7,7 @@ Packet *new_packet(unsigned char control)
 		return NULL;
 
 	packet->control = control;
+	packet->size = 0;
 	packet->frame = NULL;
 
 	return packet;

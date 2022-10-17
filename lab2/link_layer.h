@@ -1,5 +1,5 @@
-#ifndef PROTOCOL_H
-#define PROTOCOL_H
+#ifndef LINK_LAYER_H
+#define LINK_LAYER_H
 
 #include "alarm.h"
 #include "port.h"

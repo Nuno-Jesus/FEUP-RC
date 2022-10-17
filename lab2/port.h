@@ -10,11 +10,11 @@ typedef struct port_t
 	char *name;
 	struct termios oldtio;
 	struct termios newtio;
-} PortSettings;
+} Port;
 
-PortSettings *new_port(char *, int);
+Port *new_port(char *, int);
 
-void delete_port(PortSettings *);
+void delete_port(Port *);
 
 int canonical_open(char *);
 
