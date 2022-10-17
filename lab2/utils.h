@@ -9,8 +9,10 @@ void print_error(char *);
 
 void print_frame(unsigned char *, size_t);
 
-unsigned char *tobytes(unsigned long n);
+unsigned char *tobytes(unsigned long );
 
-unsigned char *strrev(unsigned char *str);
+unsigned char *strrev(unsigned char *);
+
+unsigned char get_bcc2(unsigned char *, unsigned long);
 
 #endif

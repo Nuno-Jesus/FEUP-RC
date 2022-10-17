@@ -53,3 +53,16 @@ unsigned char *strrev(unsigned char *str)
 	}
 	return (str);
 }
+
+unsigned char get_bcc2(unsigned char *data, unsigned long size)
+{
+	if (!data || !size)
+		return 0;
+
+	unsigned char res = data[0];
+	
+	for(unsigned long i = 1; i < size; i++)
+		res = res ^ data[i];
+
+	return res;
+}

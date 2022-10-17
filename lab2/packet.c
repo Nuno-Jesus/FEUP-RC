@@ -7,17 +7,25 @@ Packet *new_packet(unsigned char control)
 		return NULL;
 
 	packet->control = control;
-	packet->size = 0;
-	packet->frame = NULL;
+	packet->dataSize = 0;
+	packet->data = NULL;
 
 	return packet;
 }
 
 void delete_packet(Packet *packet)
 {
-	if (packet->frame)
-		free(packet->frame);
+	if (packet->data)
+		free(packet->data);
 	free(packet);
+}
+
+unsigned long get_packet_size(Packet *packet)
+{	
+	if (packet->control == 1)
+		return 4 + packet->dataSize;
+	else
+		return 1 + packet->dataSize;
 }
 
 Packet *assemble_data_packet(unsigned char *data, int size)

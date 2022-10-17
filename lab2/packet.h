@@ -7,13 +7,15 @@
 typedef struct packet_t
 {
 	PacketControl control;
-	unsigned long size;
-	unsigned char *frame;
+	unsigned long dataSize;
+	unsigned char *data;
 } Packet;
 
 Packet *new_packet(unsigned char);
 
 void delete_packet(Packet *);
+
+unsigned long get_packet_size(Packet *);
 
 Packet *assemble_data_packet(unsigned char *, int);
 
