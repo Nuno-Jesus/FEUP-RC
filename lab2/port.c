@@ -1,10 +1,10 @@
 #include "port.h"
 
-PortSettings *port;
+Port *port;
 
-PortSettings *new_port(char *name, int fd)
+Port *new_port(char *name, int fd)
 {
-	PortSettings *port = (PortSettings *)malloc(sizeof(PortSettings));
+	Port *port = (Port *)malloc(sizeof(Port));
 	if (!port)
 		return NULL;
 
@@ -16,7 +16,7 @@ PortSettings *new_port(char *name, int fd)
 	return port;
 }
 
-void delete_port(PortSettings *port)
+void delete_port(Port *port)
 {
 	
 	//free(port->name);

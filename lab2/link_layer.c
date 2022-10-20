@@ -12,7 +12,7 @@ int llopen(char *port, Device device)
 		return -1;
 
 	if (!(a = new_alarm(NULL, TIMEOUT)))
-		return 0;
+		return -1;
 
 	set_alarm(a);
 
@@ -22,6 +22,10 @@ int llopen(char *port, Device device)
 		canonical_close(fd);
 		return -1;
 	}
+
+	if (!(link = new_link_layer()))
+		return -1;
+
 	return fd;
 }
 
@@ -34,8 +38,53 @@ int llclose(int fd, Device device)
     return canonical_close(fd);
 }
 
+void get_possible_responses(unsigned char responses[])
+{
+	if (link->sequenceNumber == 0)
+	{
+		responses[0] = RR01;
+		responses[1] = REJ00;
+	}
+	else
+	{
+		responses[0] = RR00;
+		responses[1] = REJ01;
+	}
+}
+
 int llwrite(int fd, char *buffer, int length)
 {
+	unsigned char *frame;
+	unsigned char responses[2];
+
+	if (!(frame = assemble_information_frame(buffer)))
+		return -1;
+
+	if (!(frame = stuff_information_frame(frame)))
+		return -1;
+
+	start_alarm(a);
+	get_possible_responses(responses);
+
+	if (!send_information_frame(frame))
+		return -1;
+
+	do
+	{
+		printf("Sending data frame (length = %d).\n", length);
+		if (receive_supervision_frame(TRANSMITTER, responses[0]))
+		{
+			stop_alarm();
+			break;
+		}
+		else if (receive_supervision_frame(TRANSMITTER, responses[1]))
+			printf("REJ received. Attempts: %d\n", a->counter++);
+		else
+			if (!send_information_frame(frame))
+				return -1;
+	} while(a->counter < MAXTRANSMISSIONS);
+
+	
 	return -1;
 }
 
@@ -155,4 +204,19 @@ int llclose_transmitter()
 
 	printf("Sending UA frame.\n");
     return 1;
+}
+
+LinkLayer *new_link_layer()
+{
+	if(!(link = (LinkLayer *)malloc(sizeof(LinkLayer))))
+		return NULL;
+
+	link->sequenceNumber = 0;
+	if (!(link->frame = new_frame(1, NULL)))
+	{
+		free(link);
+		return NULL;
+	}
+
+	return link;
 }

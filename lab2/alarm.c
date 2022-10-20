@@ -28,6 +28,7 @@ void set_alarm()
 void start_alarm(Alarm *a)
 {
 	alarm(a->timeout);
+	a->counter = 0;
 	#ifdef DEBUG
 		printf("Started alarm with %lu seconds\n", a->timeout);
 	#endif

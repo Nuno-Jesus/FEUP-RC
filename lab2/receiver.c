@@ -13,7 +13,7 @@
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2)
+    /* if (argc < 2)
 		print_usage(argv[0]);
     
 	int fd;
@@ -22,6 +22,10 @@ int main(int argc, char *argv[])
 	
 	if ((fd = llclose(fd, RECEIVER)) == -1)
 		printf("Couldn't close receiver connection\n");
+ 	*/
+	
+	if (!receive_file(TRANSMITTER_PORT, argv[1]))
+		print_error("receive_file(): error\n");
 
 	printf("Gracefully ending.\n");
     return 0;

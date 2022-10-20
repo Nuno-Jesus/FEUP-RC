@@ -1,5 +1,7 @@
 #include "state_machine.h"
 
+extern LinkLayer* link;
+
 StateMachine *new_state_machine(Device device, FrameControl frame)
 {
 	StateMachine *machine = (StateMachine *)malloc(sizeof(StateMachine));
@@ -11,7 +13,7 @@ StateMachine *new_state_machine(Device device, FrameControl frame)
 	machine->controlField = frame;
 	machine->byte = 0x00;
 	machine->frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
-	if(!machine->frame){
+	if (!machine->frame){
 		delete_state_machine(machine);
 		return NULL;
 	}
@@ -21,10 +23,10 @@ StateMachine *new_state_machine(Device device, FrameControl frame)
 
 void delete_state_machine(StateMachine *machine)
 {
-	if(!machine)
+	if (!machine)
 		return;
 	
-	if(machine->frame)
+	if (machine->frame)
 		free(machine->frame);
 	
 	free(machine);
@@ -91,20 +93,43 @@ void wait_control_handler(StateMachine *machine)
 			machine->state = WAIT_ADDRESS;
 			break;
 		case CONTROL_SET:
-			if(machine->device == RECEIVER)
+			if (machine->frame == SET)
 				machine->state = WAIT_BCC;
 			else
 				machine->state = START;
 			break;
 		case CONTROL_UA:
-			if(machine->device == TRANSMITTER)
+			if (machine->frame == UA)
 				machine->state = WAIT_BCC;
 			else
 				machine->state = START;
 			break;
 		case CONTROL_DISC:
-			machine->state = WAIT_BCC;
+			if (machine->frame == DISC)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
 			break;
+		case CONTROL_RR(0):
+			if (link->sequenceNumber == 0 && machine->frame == RR00)
+				machine->state = WAIT_BCC;
+			else 
+				machine->state = START;
+		case CONTROL_RR(1):
+			if (link->sequenceNumber == 1 && machine->frame == RR01)
+				machine->state = WAIT_BCC;
+			else 
+				machine->state = START;
+		case CONTROL_REJ(0):
+			if (link->sequenceNumber == 0 && machine->frame == REJ00)
+				machine->state = WAIT_BCC;
+			else 
+				machine->state = START;
+		case CONTROL_REJ(1):
+			if (link->sequenceNumber == 1 && machine->frame == REJ01)
+				machine->state = WAIT_BCC;
+			else 
+				machine->state = START;
 		default:
 			machine->state = START;
 			break;
@@ -119,20 +144,43 @@ void wait_bcc_handler(StateMachine *machine)
 			machine->state = WAIT_ADDRESS;
 			break;
 		case BCC_SET:
-			if(machine->device == RECEIVER)
+			if (machine->frame == SET)
 				machine->state = WAIT_END_FLAG;
 			else
 				machine->state = START;
 			break;
 		case BCC_UA:
-			if(machine->device == TRANSMITTER)
+			if (machine->frame == UA)
 				machine->state = WAIT_END_FLAG;
 			else
 				machine->state = START;
 			break;
 		case BCC_DISC:
-			machine->state = WAIT_END_FLAG;
+			if (machine->frame == DISC)
+				machine->state = WAIT_END_FLAG;
+			else 
+				machine->frame == START;
 			break;
+		case BCC_RR(0):
+			if (link->sequenceNumber == 0 && machine->frame == RR00)
+				machine->state = WAIT_END_FLAG;
+			else 
+				machine->state = START;
+		case BCC_RR(1):
+			if (link->sequenceNumber == 1 && machine->frame == RR01)
+				machine->state = WAIT_END_FLAG;
+			else 
+				machine->state = START;
+		case BCC_REJ(0):
+			if (link->sequenceNumber == 0 && machine->frame == REJ01)
+				machine->state = WAIT_END_FLAG;
+			else 
+				machine->state = START;
+		case BCC_REJ(1):
+			if (link->sequenceNumber == 1 && machine->frame == REJ01)
+				machine->state = WAIT_END_FLAG;
+			else 
+				machine->state = START;
 		default:
 			machine->state = START;
 			break;

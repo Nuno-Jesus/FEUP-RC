@@ -35,10 +35,16 @@ typedef enum frame_control_t
 
 typedef enum packet_control_t
 {
+	DATA_PACKET = 1,
 	START_PACKET,
-	DATA_PACKET,
 	END_PACKET
 } PacketControl;
+
+typedef enum packet_parameter_t
+{
+	FILESIZE,
+	FILENAME
+} PacketParameter;
 
 typedef enum device_t
 {
@@ -82,6 +88,9 @@ typedef enum device_t
 #define TRUE 1
 
 #define BUF_SIZE 256
+
+#define CONTROL_DATA_FIELD_1 0x00
+#define CONTROL_DATA_FIELD_2 0x40
 
 //volatile int STOP = FALSE;
 

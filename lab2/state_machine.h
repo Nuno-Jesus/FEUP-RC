@@ -1,7 +1,8 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 
-#include "macros.h"
+#include "utils.h"
+#include "link_layer.h"
 
 typedef struct state_machine_t
 {
