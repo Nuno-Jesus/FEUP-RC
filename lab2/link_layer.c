@@ -31,9 +31,9 @@ int llopen(char *port, Device device)
 
 //Needs to free the memory
 int llclose(int fd, Device device)
-{    
+{
     int ret;
-    
+
 	ret = device == TRANSMITTER ? llclose_transmitter() : llclose_receiver();
     return canonical_close(fd);
 }
@@ -84,20 +84,27 @@ int llwrite(int fd, char *buffer, int length)
 				return -1;
 	} while(a->counter < MAXTRANSMISSIONS);
 
-	
+
 	return -1;
 }
 
 int llread(int fd, char *buffer)
 {
-	return -1;
+	/*
+	while the buffer is not bull
+		- read information frame
+		- byte destuffig
+		- check if bbc2 correct
+	-
+
+	*/
 }
 
 int llopen_transmitter()
 {
 	if (!send_supervision_frame(SET))
 		return 0;
-	
+
     start_alarm(a);
 
 	do
@@ -154,7 +161,7 @@ int llclose_receiver()
         return 0;
 
 	start_alarm(a);
-    
+
 	do
     {
         printf("Received DISC frame.\n");
@@ -179,7 +186,7 @@ int llclose_transmitter()
 {
     if (!send_supervision_frame(DISC))
         return 0;
-    
+
     start_alarm(a);
 
     do
