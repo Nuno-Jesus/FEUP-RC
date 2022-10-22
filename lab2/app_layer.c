@@ -1,6 +1,6 @@
 #include "app_layer.h"
 
-struct AppLayer appLayer;
+AppLayer *app;
 
 int resolve_data_packet(unsigned char *packet, int *sequence_number, unsigned char *packet_data)
 {
@@ -79,9 +79,9 @@ int receive_file(char *portname)
 	int fd;
 	char *content;
 
-	appLayer.device = RECEIVER;
+	app.device = RECEIVER;
 
-	if ((appLayer.fd = llopen(portname, TRANSMITTER)) == -1)
+	if ((app.fd = llopen(portname, TRANSMITTER)) == -1)
 		return 0;
 
 	// Count the time
@@ -96,7 +96,7 @@ int receive_file(char *portname)
 	gettimeofday(&start, NULL);
 
 	// Read from the serial port using llread()
-	if ((bytesRead = llread(appLayer.fd, buf) < 0)
+	if ((bytesRead = llread(app.fd, buf) < 0)
 		return 0;
 
 	bitsRead += bytesRead * 8;
@@ -122,7 +122,7 @@ int receive_file(char *portname)
 	while(1)
 	{
 		// Read from the serial port using llread()
-		if ((bytesRead = llread(appLayer.fd, buf) < 0)
+		if ((bytesRead = llread(app.fd, buf) < 0)
 			return 0;
 
 		bitsRead += bytesRead * 8;
@@ -171,7 +171,7 @@ int receive_file(char *portname)
 	if (filesizeAtEnd != filesize || filenameAtEnd != filename)
 		return 0;
 
-	if (!llclose(fd, RECEIVER))
+	if (!llclose(app.fd, RECEIVER))
 		return 0;
 }
 

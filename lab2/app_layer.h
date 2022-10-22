@@ -8,7 +8,7 @@
 #include <sys/times.h>
 #include <sys/time.h>
 
-struct appLayer {
+typedef struct app_layer_t {
     int fd;
     Device device;
 } AppLayer;
