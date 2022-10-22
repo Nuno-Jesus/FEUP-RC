@@ -26,24 +26,50 @@ int resolve_data_packet(unsigned char *packet, int *sequence_number, unsigned ch
 
 int resolve_control_packet(unsigned char *packet, int *filesize, unsigned char *filename)
 {
-	*fileSize = 0;
+	*filesize = 0;
 
 	// Check the control field
 	if (packet[0] != START_PACKET && packet[1] != END_PACKET)
 		return 0;
 
-	// Check the type
-	if (packet[1] == FILESIZE)
+	int t1, t2, l1, l2;
+
+	// Read the parameter
+	t1 = packet[1];
+
+	// Check the parameter
+	if (t1 == FILESIZE)
 	{
 		// L -> Check the length of the V field size
-		int v_size = packet[2];
+		l1 = packet[2];
 
 		// Parse the file size
-		for (int i = 0; i < v_size; i++)
-		{
-			*fileSize = *fileSize
-		}
+		for (int i = 0; i < l1; i++)
+			*filesize = packet[i + 3] + filesize * 256;
+
 	}
+	else
+		return 0;
+
+	/* t2,l2 and v2 fields positions are computed using the formulas below*/
+	int t2Pos = l1 + 3;
+	int l2Pos = t2Pos + 1;
+	int v2Start = l2Pos + 1;
+
+	// Read the parameter
+	t2 = packet[t2Pos];
+
+	// Check the parameter
+	if (t2 == FILENAME)
+	{
+		// L -> Check the length of the V field size
+		l2 = packet[l2Pos];
+
+		for (int i = 0; i < l2; i++)
+			filename[i] = packet[v2Start + i]
+	}
+	else
+		return 0;
 
 	return 1;
 }
