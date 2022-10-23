@@ -22,6 +22,12 @@ typedef struct app_layer_t {
  */
 int send_file(char *, char *);
 
+/**
+ * @brief Reads a file through the specified serial port
+ * @param portname The serial port to be used
+ * @return 1 on success, 0 otherwise
+ */
+int receive_file(char* );
 
 /**
  * @brief
@@ -37,10 +43,13 @@ int resolve_data_packet(unsigned char *, int *, unsigned char *);
  * @brief
  *
  * @param packet Contains the control packet to be resolved
- * @param filename Will contain the name of the file.
  * @param fileSize Will contain the size of the file
+ * @param filename Will contain the name of the file.
  * @return 1 on sucess, 0 otherwise
  */
-int resolve_control_packet(unsigned char *, unsigned char *, unsigned char *);
+int resolve_control_packet(unsigned char *packet, int*, unsigned char*);
+
+
+
 
 #endif

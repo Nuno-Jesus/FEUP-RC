@@ -45,7 +45,7 @@ int resolve_control_packet(unsigned char *packet, int *filesize, unsigned char *
 
 		// Parse the file size
 		for (int i = 0; i < l1; i++)
-			*filesize = packet[i + 3] + filesize * 256;
+			*filesize = packet[i + 3] + *filesize * 256;
 
 	}
 	else
@@ -66,7 +66,7 @@ int resolve_control_packet(unsigned char *packet, int *filesize, unsigned char *
 		l2 = packet[l2Pos];
 
 		for (int i = 0; i < l2; i++)
-			filename[i] = packet[v2Start + i]
+			filename[i] = packet[v2Start + i];
 	}
 	else
 		return 0;
@@ -79,9 +79,9 @@ int receive_file(char *portname)
 	int fd;
 	char *content;
 
-	app.device = RECEIVER;
+	app->device = RECEIVER;
 
-	if ((app.fd = llopen(portname, TRANSMITTER)) == -1)
+	if ((app->fd = llopen(portname, app->device)) == -1)
 		return 0;
 
 	// Count the time
@@ -96,7 +96,7 @@ int receive_file(char *portname)
 	gettimeofday(&start, NULL);
 
 	// Read from the serial port using llread()
-	if ((bytesRead = llread(app.fd, buf) < 0)
+	if ((bytesRead = llread(app->fd, buf)) < 0)
 		return 0;
 
 	bitsRead += bytesRead * 8;
@@ -112,7 +112,7 @@ int receive_file(char *portname)
 		return 0;
 
 	// create a file to write the received data to it
-	FILE *filePtr = fopen(filename"received_pinguim.gif", "w");
+	FILE *filePtr = fopen("received_pinguim.gif", "w");
 	if (!filePtr)
 		return 0;
 
@@ -122,7 +122,7 @@ int receive_file(char *portname)
 	while(1)
 	{
 		// Read from the serial port using llread()
-		if ((bytesRead = llread(app.fd, buf) < 0)
+		if ((bytesRead = llread(app->fd, buf) < 0))
 			return 0;
 
 		bitsRead += bytesRead * 8;
@@ -142,7 +142,7 @@ int receive_file(char *portname)
 			bytesRead -= 4;
 
 			//write to the file
-			if((fwrite(data, sizeof unsigned char, bytesRead, filePtr) < bytesRead))
+			if((fwrite(data, sizeof(unsigned char), bytesRead, filePtr) < bytesRead))
 				return -1;
 		}
 
@@ -171,7 +171,7 @@ int receive_file(char *portname)
 	if (filesizeAtEnd != filesize || filenameAtEnd != filename)
 		return 0;
 
-	if (!llclose(app.fd, RECEIVER))
+	if (!llclose(app->fd, app->device))
 		return 0;
 }
 
