@@ -56,6 +56,10 @@ typedef enum device_t
 
 #define FLAG 0x7E
 #define ADDRESS 0x03
+#define ESCAPE 0x7D
+#define FLAG_STUFFED 0x5E
+#define ESCAPE_STUFFED 0x5D
+
 
 #define CONTROL_SET 0x03
 #define BCC_SET CONTROL_SET ^ ADDRESS
