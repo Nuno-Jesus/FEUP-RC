@@ -72,6 +72,11 @@ unsigned char *stuff_information_frame(unsigned char *frame)
 	return NULL;
 }
 
+unsigned char *unstuff_information_frame(unsigned char *frame)
+{
+	return NULL;
+}
+
 /* 
 unsigned long get_packet_size(Packet *packet)
 {	
