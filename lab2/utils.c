@@ -72,7 +72,7 @@ int stuff_information_frame(unsigned char *frame, int size)
 	if (!frame || !size)
 		return 0;
 
-	unsigned char *buf[size + 6]; // 4 bytes for the header + size of the data packet + 2 bytes for the tail
+	unsigned char buf[size + 6]; // 4 bytes for the header + size of the data packet + 2 bytes for the tail
 
 	for (int i = 0; i < size; i++)
 	{
@@ -110,31 +110,34 @@ int stuff_information_frame(unsigned char *frame, int size)
 
 int unstuff_information_frame(unsigned char *frame, int size)
 {
-	unsigned char aux[size + 5];
+	unsigned char buf[size + 5];	// (data packet + bcc2) + 5 bytes for header and trail
 
 	for (int i = 0; i < (size + 5); i++)
-		aux[i] = frame[i];
+		buf[i] = frame[i];
+	
+	int dataPosition = 4;
 
-	int dataPos = 4;
-	1
-
-		for (int i = dataPos; i < (size + 5); i++)
+	for (int j = dataPosition; j < (size + 5); j++)
 	{
-		if (aux[i] == ESCAPE)
+		if (buf[j] == ESCAPE)
 		{
-			if (aux[i + 1] == ESCAPE_STUFFED)
-				frame[dataPos] = ESCAPE;
-			else if (aux[i + 1] == FLAG_STUFFED)
-				frame[dataPos] = FLAG;
-			i++;
-			dataPos++;
+			if (buf[j+1] == ESCAPE_STUFFED)
+				frame[dataPosition] = ESCAPE;
+			
+			else if (aux[j+1] == FLAG_STUFFED)
+				frame[dataPosition] = FLAG;
+
+			j++;
+			dataPosition++;
 		}
 		else
 		{
-			frame[dataPos] = aux[i];
-			dataPos++;
+			frame[dataPosition] = buf[j];
+			dataPosition++;
 		}
 	}
+
+	return dataPosition;
 }
 
 /*
