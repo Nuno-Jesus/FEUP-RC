@@ -175,7 +175,7 @@ int receive_file(char *portname)
 		return 0;
 }
 
-int assemble_control_packet(unsigned char *p, unsigned char control, char *filename, int filesize)
+int assemble_control_packet(unsigned char *p, PacketControl control, char *filename, int filesize)
 {
 	int len;
 	int packetsize; 
@@ -187,13 +187,29 @@ int assemble_control_packet(unsigned char *p, unsigned char control, char *filen
 		return 0;
 
 	p[0] = control;
-	p[1] = 0;
+	p[1] = FILESIZE;
 	p[2] = (unsigned char) len;
 	memset(p + 3, filesizeStr, len);
 
-	p[3 + len] = 1;
+	p[3 + len] = FILENAME;
 	p[3 + len + 1] = (unsigned char) strlen(filename);
 	memset(p + (3 + len + 2), filename, strlen(filename));
+
+	return 1;
+}
+
+int assemble_data_packet(unsigned char *p, unsigned char* data, int dataSize, int sequenceNumber)
+{
+	int packetSize = 4 + dataSize;
+
+	if(!(p = (unsigned char *)malloc(packetSize * sizeof(char))))
+		return 0;
+
+	p[0] = DATA_PACKET;
+	p[1] = sequenceNumber;
+	p[2] = dataSize / 256;
+	p[3] = dataSize % 256;
+	memset(p + 4, data, dataSize);
 
 	return 1;
 }
@@ -201,51 +217,55 @@ int assemble_control_packet(unsigned char *p, unsigned char control, char *filen
 int send_file(char *portname, char *filename)
 {
 	int fd;
-	int filesize;
-	int packetsize;
+	int fileSize;
+	int packetSize;
 	char *file;
 	char *packet;
 
 	if ((fd = llopen(portname, TRANSMITTER)) == -1)
 		return 0;
 
-	if (!(file = get_file_content(filename)))
+	if (!(file = get_file_conteqnt(filename)))
 		return 0;
 
-	filesize = get_file_size(filename);
+	fileSize = get_file_size(filename);
 
-	if (!(packetsize = assemble_control_packet(START_PACKET, packet, filename, filesize)))
+	if (!(packetSize = assemble_control_packet(START_PACKET, packet, filename, fileSize)))
 		return 0;
 
-	if (llwrite(fd, packet, packetsize) == -1)
+	if (llwrite(fd, packet, packetSize) == -1)
 	{
 		canonical_close(fd);
 		return 0;
 	}
 
 	free(packet);
-	for(int i = 0; i < filesize; i = i + MAX_DATA)
-	{
-		if (i + MAX_DATA > filesize)
-			packetsize = filesize % MAX_DATA;
-		else
-			packetsize = MAX_DATA;
 
-		if (!(packet = assemble_data_packet(file + i, packetsize)))
+	int seqNum = 0;
+	for(int i = 0; i < fileSize; i = i + MAX_DATA)
+	{
+		if (i + MAX_DATA > fileSize)
+			packetSize = fileSize % MAX_DATA;
+		else
+			packetSize = MAX_DATA;
+
+		if (!(packetSize = assemble_data_packet(packet, file + i, packetSize, seqNum)))
 			return 0;
 		
-		if (llwrite(fd, packet, packetsize) == -1)
+		if (llwrite(fd, packet, packetSize) == -1)
 		{
 			canonical_close(fd);
 			return 0;
 		}
+
 		free(packet);
+		seqNum = (seqNum + 1) % 256;
 	}
 
-	if (!(packetsize = assemble_control_packet(END_PACKET, packet)))
+	if (!(packetSize = assemble_control_packet(END_PACKET, packet, filename, fileSize)))
 		return 0;
 
-	llwrite(fd, packet, packetsize);
+	llwrite(fd, packet, packetSize);
 
 	if (llclose(fd, TRANSMITTER) == -1)
 		return 0;

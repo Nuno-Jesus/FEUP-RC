@@ -97,5 +97,4 @@ typedef enum device_t
 #define MAX_DATA 1024
 #define MAX_DATA_PACKET (MAX_DATA + 4)	// 4 extra bytes for the packet header
 
-
 #endif
