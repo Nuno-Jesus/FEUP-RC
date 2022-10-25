@@ -1,7 +1,7 @@
 #include "port.h"
 
 Port *port;
-extern LinkLayer *link;
+extern LinkLayer *ll;
 
 Port *new_port(char *name, int fd)
 {
@@ -133,8 +133,8 @@ int receive_information_frame(Device device)
 		if (!read(port->fd, &machine->byte, 1))
 			return 0;
 
-		link->frame = realloc(link->frame, ++link->frameSize);
-		link->frame[link->frameSize] = machine->byte;
+		ll->frame = realloc(ll->frame, ++ll->frameSize);
+		ll->frame[ll->frameSize] = machine->byte;
 
 		state_machine_multiplexer(machine);
 	}
@@ -166,8 +166,21 @@ unsigned char *assemble_supervision_frame(FrameControl field)
 			frame[3] = BCC_DISC;
 			break;
 		case REJ00:
-			frame[2] = 
-			frame[3] =
+			frame[2] = CONTROL_REJ(0);
+			frame[3] = BCC_REJ(0);
+			break;
+		case REJ01:
+			frame[2] = CONTROL_REJ(1);
+			frame[3] = BCC_REJ(1);
+			break;
+		case RR00:
+			frame[2] = CONTROL_RR(0);
+			frame[3] = BCC_RR(0);
+			break;
+		case RR01:
+			frame[2] = CONTROL_RR(1);
+			frame[3] = BCC_RR(1);
+			break;
 	}
 	frame[4] = FLAG;
 

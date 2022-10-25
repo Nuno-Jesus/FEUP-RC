@@ -1,6 +1,6 @@
 #include "link_layer.h"
 
-LinkLayer *link;
+LinkLayer *ll;
 extern Alarm *a;
 
 int llopen(char *port, Device device)
@@ -23,7 +23,7 @@ int llopen(char *port, Device device)
 		return -1;
 	}
 
-	if (!(link = new_link_layer()))
+	if (!(ll = new_link_layer()))
 		return -1;
 
 	return fd;
@@ -31,15 +31,13 @@ int llopen(char *port, Device device)
 
 int llclose(int fd, Device device)
 {
-	int ret;
-
-	ret = device == TRANSMITTER ? llclose_transmitter() : llclose_receiver();
+	device == TRANSMITTER ? llclose_transmitter() : llclose_receiver();
 	return canonical_close(fd);
 }
 
 void get_possible_responses(unsigned char responses[])
 {
-	if (link->sequenceNumber == 0)
+	if (ll->sequenceNumber == 0)
 	{
 		responses[0] = RR01;
 		responses[1] = REJ00;
@@ -51,7 +49,7 @@ void get_possible_responses(unsigned char responses[])
 	}
 }
 
-int assemble_information_frame(unsigned char *buffer, int length)
+unsigned char* assemble_information_frame(unsigned char *buffer, int length)
 {
 	unsigned char *frame;
 	int size;
@@ -62,7 +60,7 @@ int assemble_information_frame(unsigned char *buffer, int length)
 
 	frame[0] = FLAG;
 	frame[1] = ADDRESS;
-	frame[2] = SEQ(link->sequenceNumber);
+	frame[2] = SEQ(ll->sequenceNumber);
 	frame[3] = BCC(frame[1], frame[2]);
 	memcpy(frame + 4, buffer, length);
 	frame[4 + length] = FLAG;
@@ -75,20 +73,21 @@ int llwrite(int fd, char *buffer, int length)
 	unsigned char *frame;
 	unsigned char responses[2];
 	int bytes;
+	int newLength;
 
 	if (!(frame = assemble_information_frame(buffer, length)))
 		return -1;
 
-	if (!(frame = stuff_information_frame(frame, length)))
+	if (!(newLength = stuff_information_frame(frame, length)))
 		return -1;
 
-	link->frame = frame;
-	link->frameSize = 6 + length;
+	ll->frame = frame;
+	ll->frameSize = 6 + newLength;
 
 	start_alarm(a);
 	get_possible_responses(responses);
 
-	if (!send_information_frame(frame, link->frameSize))
+	if (!send_information_frame(frame, ll->frameSize))
 		return -1;
 
 	do
@@ -101,12 +100,12 @@ int llwrite(int fd, char *buffer, int length)
 		}
 		else if (receive_supervision_frame(TRANSMITTER, responses[1]))
 			printf("REJ received. Attempts: %d\n", a->counter++);
-		else if (!(bytes = send_information_frame(frame, link->frameSize)))
+		else if (!(bytes = send_information_frame(frame, ll->frameSize)))
 			return -1;
 
 	} while (a->counter < MAXTRANSMISSIONS);
 
-	link->sequenceNumber = !link->sequenceNumber;
+	ll->sequenceNumber = !ll->sequenceNumber;
 
 	return bytes;
 }
@@ -122,64 +121,64 @@ int llread(int fd, char *buffer)
 		if(!receive_information_frame(RECEIVER, SET))
 			return 0;
 
-		if ((bytesRead = unstuff_information_frame(link->frame, link->frameSize - 6)) < 0)
+		if ((bytesRead = unstuff_information_frame(ll->frame, ll->frameSize - 6)) < 0)
 			return 0;
 
 		int controlByte;
 
-		if (link->frame[2] == SEQ(0))
+		if (ll->frame[2] == SEQ(0))
 			controlByte = 0;
 
 		else
 			controlByte = 1;
 
-		int bcc2 = link->frame[bytesRead - 2];
+		int bcc2 = ll->frame[bytesRead - 2];
 
 		// Check if bcc2 is correct
-		if (bcc2 == get_bcc2(&link->frame[4], bytesRead - 6))
+		if (bcc2 == get_bcc2(&ll->frame[4], bytesRead - 6))
 		{
-			if (controlByte != link->sequenceNumber)
+			if (controlByte != ll->sequenceNumber)
 			{
 				if (!controlByte)
 				{
 					responseByte = RR01;
-					link->sequenceNumber = 1;
+					ll->sequenceNumber = 1;
 				}
 				else
 				{
 					responseByte = RR00;
-					link->sequenceNumber = 0;
+					ll->sequenceNumber = 0;
 				}
 			}
 			else
 			{
 				for (int i = 0; i < bytesRead; i++){
-					buffer[i] = link->frame[4 + i];
+					buffer[i] = ll->frame[4 + i];
 				}
 
 				bufferFull = true;
 
 				if(!controlByte){
 					responseByte = RR01; 
-					link->sequenceNumber = 1; 
+					ll->sequenceNumber = 1; 
 				}
 				else{
 					responseByte = RR00;
-					link->sequenceNumber = 0;
+					ll->sequenceNumber = 0;
 				}
 			}
 		}
 		// bcc2 was incorrect
 		else {
-			if (controlByte != link->sequenceNumber)
+			if (controlByte != ll->sequenceNumber)
 			{
 				if(!controlByte){
 					responseByte = RR01; 
-					link->sequenceNumber = 1; 
+					ll->sequenceNumber = 1; 
 				}
 				else{
 					responseByte = RR00;
-					link->sequenceNumber = 0;
+					ll->sequenceNumber = 0;
 				}
 			}
 			else
@@ -187,12 +186,12 @@ int llread(int fd, char *buffer)
 				if (!controlByte) 
 				{
 					responseByte = REJ01; 
-					link->sequenceNumber = 1;
+					ll->sequenceNumber = 1;
 				}
 				else
 				{
 					responseByte = REJ00;
-					link->sequenceNumber = 0;
+					ll->sequenceNumber = 0;
 				}
 			}
 		}
@@ -314,15 +313,11 @@ int llclose_transmitter()
 
 LinkLayer *new_link_layer()
 {
-	if (!(link = (LinkLayer *)malloc(sizeof(LinkLayer))))
+	if (!(ll = (LinkLayer *)malloc(sizeof(LinkLayer))))
 		return NULL;
 
-	link->sequenceNumber = 0;
-	if (!(link->frame = new_frame(1, NULL)))
-	{
-		free(link);
-		return NULL;
-	}
+	ll->sequenceNumber = 0;
+	ll->frame = (unsigned char *)malloc(0);
 
-	return link;
+	return ll;
 }

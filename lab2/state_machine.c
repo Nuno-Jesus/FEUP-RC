@@ -1,6 +1,6 @@
 #include "state_machine.h"
 
-extern LinkLayer* link;
+extern LinkLayer* ll;
 
 StateMachine *new_state_machine(Device device, FrameControl frame, int isInfoFrame)
 {
@@ -94,40 +94,40 @@ void wait_control_handler(StateMachine *machine)
 			machine->state = WAIT_ADDRESS;
 			break;
 		case CONTROL_SET:
-			if (machine->frame == SET)
+			if (machine->controlField == SET)
 				machine->state = WAIT_BCC;
 			else
 				machine->state = START;
 			break;
 		case CONTROL_UA:
-			if (machine->frame == UA)
+			if (machine->controlField == UA)
 				machine->state = WAIT_BCC;
 			else
 				machine->state = START;
 			break;
 		case CONTROL_DISC:
-			if (machine->frame == DISC)
+			if (machine->controlField == DISC)
 				machine->state = WAIT_BCC;
 			else
 				machine->state = START;
 			break;
 		case CONTROL_RR(0):
-			if (link->sequenceNumber == 0 && machine->frame == RR00)
+			if (ll->sequenceNumber == 0 && machine->controlField == RR00)
 				machine->state = WAIT_BCC;
 			else 
 				machine->state = START;
 		case CONTROL_RR(1):
-			if (link->sequenceNumber == 1 && machine->frame == RR01)
+			if (ll->sequenceNumber == 1 && machine->controlField == RR01)
 				machine->state = WAIT_BCC;
 			else 
 				machine->state = START;
 		case CONTROL_REJ(0):
-			if (link->sequenceNumber == 0 && machine->frame == REJ00)
+			if (ll->sequenceNumber == 0 && machine->controlField == REJ00)
 				machine->state = WAIT_BCC;
 			else 
 				machine->state = START;
 		case CONTROL_REJ(1):
-			if (link->sequenceNumber == 1 && machine->frame == REJ01)
+			if (ll->sequenceNumber == 1 && machine->controlField == REJ01)
 				machine->state = WAIT_BCC;
 			else 
 				machine->state = START;
@@ -145,40 +145,40 @@ void wait_bcc_handler(StateMachine *machine)
 			machine->state = WAIT_ADDRESS;
 			break;
 		case BCC_SET:
-			if (machine->frame == SET)
+			if (machine->controlField == SET)
 				machine->state = WAIT_END_FLAG;
 			else
 				machine->state = START;
 			break;
 		case BCC_UA:
-			if (machine->frame == UA)
+			if (machine->controlField == UA)
 				machine->state = WAIT_END_FLAG;
 			else
 				machine->state = START;
 			break;
 		case BCC_DISC:
-			if (machine->frame == DISC)
+			if (machine->controlField == DISC)
 				machine->state = WAIT_END_FLAG;
 			else 
-				machine->frame == START;
+				machine->controlField == START;
 			break;
 		case BCC_RR(0):
-			if (link->sequenceNumber == 0 && machine->frame == RR00)
+			if (ll->sequenceNumber == 0 && machine->controlField == RR00)
 				machine->state = WAIT_END_FLAG;
 			else 
 				machine->state = START;
 		case BCC_RR(1):
-			if (link->sequenceNumber == 1 && machine->frame == RR01)
+			if (ll->sequenceNumber == 1 && machine->controlField == RR01)
 				machine->state = WAIT_END_FLAG;
 			else 
 				machine->state = START;
 		case BCC_REJ(0):
-			if (link->sequenceNumber == 0 && machine->frame == REJ01)
+			if (ll->sequenceNumber == 0 && machine->controlField == REJ01)
 				machine->state = WAIT_END_FLAG;
 			else 
 				machine->state = START;
 		case BCC_REJ(1):
-			if (link->sequenceNumber == 1 && machine->frame == REJ01)
+			if (ll->sequenceNumber == 1 && machine->controlField == REJ01)
 				machine->state = WAIT_END_FLAG;
 			else 
 				machine->state = START;

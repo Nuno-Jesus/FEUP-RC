@@ -47,7 +47,7 @@ int resolve_data_packet(unsigned char *, int *, unsigned char *);
  * @param filename Will contain the name of the file.
  * @return 1 on sucess, 0 otherwise
  */
-int resolve_control_packet(unsigned char *packet, int*, unsigned char*);
+int resolve_control_packet(unsigned char *packet, int*, char*);
 
 
 /**

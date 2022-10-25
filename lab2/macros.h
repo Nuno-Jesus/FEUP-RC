@@ -69,14 +69,14 @@ typedef enum device_t
 #define CONTROL_DISC 0x11
 #define BCC_DISC CONTROL_DISC ^ ADDRESS
 
-#define CONTROL_RR(s) (s << 8 | 0x05)
+#define CONTROL_RR(s) (s << 7 | 0x05)
 #define BCC_RR(s) CONTROL_RR(s) ^ ADDRESS
 
-#define CONTROL_REJ(s) (s << 8 | 0x01)
+#define CONTROL_REJ(s) (s << 7 | 0x01)
 #define BCC_REJ(s) CONTROL_REJ(s) ^ ADDRESS
 
 #define BCC(a, c) a ^ c
-#define SEQ(s) s << 7
+#define SEQ(s) s << 6
 
 #define TRANSMITTER_PORT "/dev/ttyS5"
 #define RECEIVER_PORT "/dev/ttyS0"

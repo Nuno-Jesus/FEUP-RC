@@ -14,7 +14,7 @@
 
 int main(int argc, char *argv[])
 {
-	if (!receive_file(TRANSMITTER_PORT, argv[1]))
+	if (!receive_file(TRANSMITTER_PORT))
 		print_error("receive_file(): error\n");
 
 	printf("Gracefully ending.\n");

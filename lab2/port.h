@@ -26,7 +26,7 @@ int receive_supervision_frame(Device, FrameControl);
 
 int send_information_frame(unsigned char *, int);
 
-int receive_information_frame(Device, FrameControl);
+int receive_information_frame(Device);
 
 unsigned char *assemble_supervision_frame(FrameControl);
 
