@@ -124,7 +124,7 @@ int unstuff_information_frame(unsigned char *frame, int size)
 			if (buf[j+1] == ESCAPE_STUFFED)
 				frame[dataPosition] = ESCAPE;
 			
-			else if (aux[j+1] == FLAG_STUFFED)
+			else if (buf[j+1] == FLAG_STUFFED)
 				frame[dataPosition] = FLAG;
 
 			j++;

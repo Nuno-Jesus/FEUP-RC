@@ -52,15 +52,34 @@ void get_possible_responses(unsigned char responses[])
 	}
 }
 
+int assemble_information_frame(unsigned char *buffer, int length)
+{
+	unsigned char *frame;
+	int size;
+
+	size = 6 + length;
+	if(!(frame = (unsigned char *)malloc(size * sizeof(char))))
+		return NULL;
+
+	frame[0] = FLAG;
+	frame[1] = ADDRESS;
+	frame[2] = SEQ(link->sequenceNumber);
+	frame[3] = BCC(frame[1], frame[2]);
+	memcpy(frame + 4, buffer, length);
+	frame[4 + length] = FLAG;
+
+	return frame;
+}
+
 int llwrite(int fd, char *buffer, int length)
 {
 	unsigned char *frame;
 	unsigned char responses[2];
 
-	if (!(frame = assemble_information_frame(buffer)))
+	if (!(frame = assemble_information_frame(buffer, length)))
 		return -1;
 
-	if (!(frame = stuff_information_frame(frame)))
+	if (!(frame = stuff_information_frame(frame, length)))
 		return -1;
 
 	start_alarm(a);

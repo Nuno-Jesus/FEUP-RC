@@ -60,7 +60,6 @@ typedef enum device_t
 #define FLAG_STUFFED 0x5E
 #define ESCAPE_STUFFED 0x5D
 
-
 #define CONTROL_SET 0x03
 #define BCC_SET CONTROL_SET ^ ADDRESS
 
@@ -76,7 +75,7 @@ typedef enum device_t
 #define CONTROL_REJ(s) (s << 8 | 0x01)
 #define BCC_REJ(s) CONTROL_REJ(s) ^ ADDRESS
 
-#define BCC(c, a) c ^ a
+#define BCC(a, c) a ^ c
 #define SEQ(s) s << 7
 
 #define TRANSMITTER_PORT "/dev/ttyS5"
