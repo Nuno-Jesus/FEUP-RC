@@ -9,9 +9,9 @@ void print_error(char *);
 
 void print_frame(unsigned char *, size_t);
 
-unsigned char *tobytes(unsigned long );
+int tobytes(unsigned long, unsigned char *);
 
-unsigned char *strrev(unsigned char *);
+unsigned char *strrev(unsigned char *, int);
 
 unsigned char get_bcc2(unsigned char *, unsigned long);
 

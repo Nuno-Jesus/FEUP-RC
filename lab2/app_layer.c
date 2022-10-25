@@ -175,6 +175,28 @@ int receive_file(char *portname)
 		return 0;
 }
 
+int assemble_control_packet(unsigned char *p, unsigned char control, char *filename, int filesize)
+{
+	int len;
+	int packetsize; 
+	unsigned char *filesizeStr;
+
+	len = tobytes(filesize, filesizeStr);
+	packetsize = 5 + strlen(filename) + len;
+	if(!(p = (unsigned char *) malloc(packetsize * sizeof(char))))
+		return 0;
+
+	p[0] = control;
+	p[1] = 0;
+	p[2] = (unsigned char) len;
+	memset(p + 3, filesizeStr, len);
+
+	p[3 + len] = 1;
+	p[3 + len + 1] = (unsigned char) strlen(filename);
+	memset(p + (3 + len + 2), filename, strlen(filename));
+
+	return 1;
+}
 
 int send_file(char *portname, char *filename)
 {
@@ -202,12 +224,12 @@ int send_file(char *portname, char *filename)
 	}
 
 	free(packet);
-	for(int i = 0; i < filesize; i = i + MAX_SIZE)
+	for(int i = 0; i < filesize; i = i + MAX_DATA)
 	{
-		if (i + MAX_SIZE > filesize)
-			packetsize = filesize % MAX_SIZE;
+		if (i + MAX_DATA > filesize)
+			packetsize = filesize % MAX_DATA;
 		else
-			packetsize = MAX_SIZE;
+			packetsize = MAX_DATA;
 
 		if (!(packet = assemble_data_packet(file + i, packetsize)))
 			return 0;

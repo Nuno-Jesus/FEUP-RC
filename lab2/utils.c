@@ -22,29 +22,27 @@ void print_frame(unsigned char *data, size_t n)
 	printf("\n");
 }
 
-unsigned char *tobytes(unsigned long n)
+int tobytes(unsigned long n, unsigned char *buf)
 {
 	int size = 0;
-	unsigned char *res = NULL;
 
 	while (n > 0)
 	{
-		res = realloc(res, ++size);
-		res[size - 1] = n % 256;
+		buf = realloc(buf, ++size);
+		buf[size - 1] = n % 256;
 		n /= 256;
 	}
 
-	res = realloc(res, ++size);
-	res[size - 1] = '\0';
-	return strrev(res);
+	buf = realloc(buf, ++size);
+	buf[size - 1] = '\0';
+	buf = strrev(buf, size - 1);
+	return size;
 }
 
-unsigned char *strrev(unsigned char *str)
+unsigned char *strrev(unsigned char *str, int len)
 {
-	int len;
 	char aux;
 
-	len = strlen((char *)str);
 	for (int i = 0; i < len / 2; i++)
 	{
 		aux = str[i];
