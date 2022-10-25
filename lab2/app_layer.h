@@ -50,6 +50,12 @@ int resolve_data_packet(unsigned char *, int *, unsigned char *);
 int resolve_control_packet(unsigned char *packet, int*, unsigned char*);
 
 
+/**
+ * @brief Creates a new AppLayer to store either Transmitter or Receiver information
+ * @param device The device the application layer is about
+ * @return A pointer to the new AppLayer structure
+ */
+AppLayer *new_app_layer(Device device);
 
 
 #endif

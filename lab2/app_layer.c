@@ -216,13 +216,15 @@ int assemble_data_packet(unsigned char *p, unsigned char* data, int dataSize, in
 
 int send_file(char *portname, char *filename)
 {
-	int fd;
 	int fileSize;
 	int packetSize;
 	char *file;
 	char *packet;
 
-	if ((fd = llopen(portname, TRANSMITTER)) == -1)
+	if (!(app = new_app_layer(TRANSMITTER)))
+		return 0;
+
+	if ((app->fd = llopen(portname, app->device)) == -1)
 		return 0;
 
 	if (!(file = get_file_conteqnt(filename)))
@@ -233,9 +235,9 @@ int send_file(char *portname, char *filename)
 	if (!(packetSize = assemble_control_packet(START_PACKET, packet, filename, fileSize)))
 		return 0;
 
-	if (llwrite(fd, packet, packetSize) == -1)
+	if (llwrite(app->fd, packet, packetSize) == -1)
 	{
-		canonical_close(fd);
+		canonical_close(app->fd);
 		return 0;
 	}
 
@@ -252,9 +254,9 @@ int send_file(char *portname, char *filename)
 		if (!(packetSize = assemble_data_packet(packet, file + i, packetSize, seqNum)))
 			return 0;
 		
-		if (llwrite(fd, packet, packetSize) == -1)
+		if (llwrite(app->fd, packet, packetSize) == -1)
 		{
-			canonical_close(fd);
+			canonical_close(app->fd);
 			return 0;
 		}
 
@@ -265,8 +267,20 @@ int send_file(char *portname, char *filename)
 	if (!(packetSize = assemble_control_packet(END_PACKET, packet, filename, fileSize)))
 		return 0;
 
-	llwrite(fd, packet, packetSize);
+	llwrite(app->fd, packet, packetSize);
 
-	if (llclose(fd, TRANSMITTER) == -1)
+	if (llclose(app->fd, app->device) == -1)
 		return 0;
+}
+
+AppLayer *new_app_layer(Device device)
+{
+	AppLayer* app = (AppLayer *)malloc(sizeof(AppLayer));
+	if(!app)
+		return NULL;
+
+	app->fd = 0;
+	app->device = device;
+
+	return app;
 }
