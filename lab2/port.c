@@ -113,8 +113,6 @@ int receive_supervision_frame(Device device, FrameControl field)
 	return 1;
 }
 
-int send_information_frame()
-
 unsigned char *assemble_supervision_frame(FrameControl field)
 {
 	unsigned char *frame = (unsigned char *)malloc(5 * sizeof(unsigned char));

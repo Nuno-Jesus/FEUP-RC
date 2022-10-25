@@ -175,29 +175,55 @@ int receive_file(char *portname)
 		return 0;
 }
 
+
 int send_file(char *portname, char *filename)
 {
 	int fd;
-	char *content;
+	int filesize;
+	int packetsize;
+	char *file;
+	char *packet;
 
 	if ((fd = llopen(portname, TRANSMITTER)) == -1)
 		return 0;
 
-	if (!(content = get_file_content(filename)))
+	if (!(file = get_file_content(filename)))
 		return 0;
 
-	/**
-	 *
-	 * Assemble and send the start control packet
-	 *
-	 * While there is content from the file to be sent:
-	 * 	-> Assemble a data packet with control = 1 and
-	 * 		a frame of size DATA_SIZE
-	 * 	-> Send the data packet through ll_write()
-	 *
-	 * Assemble and send the end control packet
-	 *
-	 */
+	filesize = get_file_size(filename);
+
+	if (!(packetsize = assemble_control_packet(START_PACKET, packet, filename, filesize)))
+		return 0;
+
+	if (llwrite(fd, packet, packetsize) == -1)
+	{
+		canonical_close(fd);
+		return 0;
+	}
+
+	free(packet);
+	for(int i = 0; i < filesize; i = i + MAX_SIZE)
+	{
+		if (i + MAX_SIZE > filesize)
+			packetsize = filesize % MAX_SIZE;
+		else
+			packetsize = MAX_SIZE;
+
+		if (!(packet = assemble_data_packet(file + i, packetsize)))
+			return 0;
+		
+		if (llwrite(fd, packet, packetsize) == -1)
+		{
+			canonical_close(fd);
+			return 0;
+		}
+		free(packet);
+	}
+
+	if (!(packetsize = assemble_control_packet(END_PACKET, packet)))
+		return 0;
+
+	llwrite(fd, packet, packetsize);
 
 	if (llclose(fd, TRANSMITTER) == -1)
 		return 0;

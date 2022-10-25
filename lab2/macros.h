@@ -90,7 +90,7 @@ typedef enum device_t
 #define FALSE 0
 #define TRUE 1
 
-#define BUF_SIZE 256
+#define MAX_SIZE 512
 
 #define CONTROL_DATA_FIELD_1 0x00
 #define CONTROL_DATA_FIELD_2 0x40
