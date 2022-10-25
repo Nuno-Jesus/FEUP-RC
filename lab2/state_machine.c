@@ -2,7 +2,7 @@
 
 extern LinkLayer* link;
 
-StateMachine *new_state_machine(Device device, FrameControl frame)
+StateMachine *new_state_machine(Device device, FrameControl frame, int isInfoFrame)
 {
 	StateMachine *machine = (StateMachine *)malloc(sizeof(StateMachine));
 	if (machine == NULL)
@@ -11,6 +11,7 @@ StateMachine *new_state_machine(Device device, FrameControl frame)
 	machine->state = START;
 	machine->device = device;
 	machine->controlField = frame;
+	machine->isInfoFrame = isInfoFrame;
 	machine->byte = 0x00;
 	machine->frame = (unsigned char *)malloc(5 * sizeof(unsigned char));
 	if (!machine->frame){
@@ -195,7 +196,10 @@ void wait_end_flag_handler(StateMachine *machine)
 			machine->state = END;
 			break;
 		default:
-			machine->state = START;
+			if (machine->isInfoFrame)
+				machine->state = WAIT_END_FLAG;
+			else
+				machine->state = START;
 			break;
 	}
 }

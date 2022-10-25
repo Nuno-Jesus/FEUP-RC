@@ -9,11 +9,12 @@ typedef struct state_machine_t
 	State state;
 	FrameControl controlField;
 	Device device;
+	int isInfoFrame;
 	unsigned char *frame;
 	unsigned char byte;
 } StateMachine;
 
-StateMachine *new_state_machine(Device, FrameControl);
+StateMachine *new_state_machine(Device, FrameControl, int);
 
 void delete_state_machine(StateMachine *);
 //! Handlers

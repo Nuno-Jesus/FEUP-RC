@@ -18,7 +18,6 @@ Port *new_port(char *name, int fd)
 
 void delete_port(Port *port)
 {
-	
 	//free(port->name);
 	free(port);
 }
@@ -99,7 +98,7 @@ int send_supervision_frame(FrameControl field)
 
 int receive_supervision_frame(Device device, FrameControl field)
 {
-	StateMachine* machine = new_state_machine(device, field);
+	StateMachine* machine = new_state_machine(device, field, FALSE);
 	if (!machine)
 		return 0;
 
