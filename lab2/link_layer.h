@@ -9,7 +9,7 @@
 typedef struct link_layer_t
 {
 	unsigned char *frame;
-	unsigned long frameSize;
+	int frameSize;
 	unsigned char sequenceNumber;
 } LinkLayer;
 

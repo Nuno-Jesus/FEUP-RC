@@ -113,6 +113,31 @@ int receive_supervision_frame(Device device, FrameControl field)
 	return 1;
 }
 
+int send_information_frame(unsigned char *frame, int size)
+{
+	if (!write(port->fd, frame, size))
+		return 0;
+
+	return 1;
+}
+
+int receive_information_frame(Device device, FrameControl field)
+{
+	StateMachine* machine = new_state_machine(device, field, TRUE);
+	if (!machine)
+		return 0;
+
+	while (machine->state != END)
+	{
+		if (!read(port->fd, &machine->byte, 1))
+			return 0;
+
+		state_machine_multiplexer(machine);
+	}
+
+	return 1;
+}
+
 unsigned char *assemble_supervision_frame(FrameControl field)
 {
 	unsigned char *frame = (unsigned char *)malloc(5 * sizeof(unsigned char));

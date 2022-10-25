@@ -29,7 +29,6 @@ int llopen(char *port, Device device)
 	return fd;
 }
 
-//Needs to free the memory
 int llclose(int fd, Device device)
 {
     int ret;
@@ -103,7 +102,7 @@ int llwrite(int fd, char *buffer, int length)
 		else if (receive_supervision_frame(TRANSMITTER, responses[1]))
 			printf("REJ received. Attempts: %d\n", a->counter++);
 		else
-			if (!(bytes = send_information_frame(frame, link->frame)))
+			if (!(bytes = send_information_frame(frame, link->frameSize)))
 				return -1;
 
 	} while(a->counter < MAXTRANSMISSIONS);
