@@ -70,70 +70,77 @@ int stuff_information_frame(unsigned char *frame, int size)
 	if (!frame || !size)
 		return 0;
 
-	unsigned char buf[size + 6]; // 4 bytes for the header + size of the data packet + 2 bytes for the tail
+	unsigned char *buf; // 4 bytes for the header + size of the data packet + 2 bytes for the tail
+	int newSize = size; 
 
-	for (int i = 0; i < size; i++)
+	if(!(buf = (unsigned char *)malloc(size * sizeof(unsigned char))))
+		return 0;
+
+	for (int i = 0, j = 0; i < size; i++)
 	{
-		buf[i] = frame[i];
-	}
-
-	int dataPosition = 4;
-
-	for (int j = dataPosition; j < (size + 6); j++)
-	{
-		// If, inside the tram, 0x7e occurs, replace it with 0x7d 0x5e
-		if (buf[j] == FLAG && j != (size + 5))
+		if(frame[i] == FLAG)
 		{
-			frame[dataPosition] = ESCAPE;
-			frame[dataPosition + 1] = FLAG_STUFFED;
-			dataPosition+=2;
+			buf = realloc(buf, ++newSize);
+			buf[j] = ESCAPE;
+			buf[j + 1] = FLAG_STUFFED;
+			j += 2;
 		}
-
-		// If, inside the tram, 0x7d occurs, replace it with 0x7d 0x5d
-		else if (buf[j] == ESCAPE && j != (size + 5))
+		else if(frame[i] == ESCAPE)
 		{
-			frame[dataPosition] = ESCAPE;
-			frame[dataPosition + 1] = ESCAPE_STUFFED;
-			dataPosition += 2;
-		}
+			buf = realloc(buf, ++newSize);
+			buf[j] = ESCAPE;
+			buf[j + 1] = ESCAPE_STUFFED;
+			j += 2;
+		} 
 		else
 		{
-			frame[dataPosition] = buf[j];
-			dataPosition++;
+			buf[j] = frame[i];
+			j++;
 		}
 	}
 
-	return dataPosition;
+	frame = realloc(frame, newSize);
+	memcpy(frame, buf, newSize);
+	free(buf);
+
+	return newSize;
 }
 
 int unstuff_information_frame(unsigned char *frame, int size)
 {
-	unsigned char buf[size + 5];	// (data packet + bcc2) + 5 bytes for header and trail
+	unsigned char* buf;
+	int newSize = size;
 
-	for (int i = 0; i < (size + 5); i++)
-		buf[i] = frame[i];
+	if(!(buf = (unsigned char *)malloc(size)))
+		return 0;
 	
-	int dataPosition = 4;
-
-	for (int j = dataPosition; j < (size + 5); j++)
+	for (int j = 0, i = 0; i < size; j++)
 	{
-		if (buf[j] == ESCAPE)
+		if (frame[i] == ESCAPE)
 		{
-			if (buf[j+1] == ESCAPE_STUFFED)
-				frame[dataPosition] = ESCAPE;
-			
-			else if (buf[j+1] == FLAG_STUFFED)
-				frame[dataPosition] = FLAG;
-
-			j++;
-			dataPosition++;
+			buf = realloc(buf, --newSize);
+			if (i + 1 < size && frame[i + 1] == ESCAPE_STUFFED)
+			{
+				buf[j] = ESCAPE;
+				i += 2;
+			}
+			else if (i + 1 < size && frame[i + 1] == FLAG_STUFFED)
+			{
+				buf[i] = FLAG;
+				i += 2;
+			}
+			i++;
 		}
 		else
 		{
-			frame[dataPosition] = buf[j];
-			dataPosition++;
+			buf[j] = frame[i];
+			i++;
 		}
 	}
 
-	return dataPosition;
+	frame = realloc(frame, newSize);
+	memcpy(frame, buf, newSize);
+	free(buf);
+
+	return newSize;
 }

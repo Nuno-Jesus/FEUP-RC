@@ -134,7 +134,7 @@ int receive_information_frame(Device device)
 			return 0;
 
 		ll->frame = realloc(ll->frame, ++ll->frameSize);
-		ll->frame[ll->frameSize] = machine->byte;
+		ll->frame[ll->frameSize - 1] = machine->byte;
 
 		state_machine_multiplexer(machine);
 	}

@@ -63,31 +63,30 @@ unsigned char* assemble_information_frame(unsigned char *buffer, int length)
 	frame[2] = SEQ(ll->sequenceNumber);
 	frame[3] = BCC(frame[1], frame[2]);
 	memcpy(frame + 4, buffer, length);
-	frame[4 + length] = FLAG;
+	frame[4 + length] = get_bcc2(buffer + 4, length - 4);
+	frame[4 + length + 1] = FLAG;
 
 	return frame;
 }
 
 int llwrite(int fd, char *buffer, int length)
 {
-	unsigned char *frame;
 	unsigned char responses[2];
 	int bytes;
 	int newLength;
 
-	if (!(frame = assemble_information_frame(buffer, length)))
+	if (!(newLength = stuff_information_frame(buffer, length)))
 		return -1;
 
-	if (!(newLength = stuff_information_frame(frame, length)))
+	if (!(ll->frame = assemble_information_frame(buffer, newLength)))
 		return -1;
-
-	ll->frame = frame;
+		
 	ll->frameSize = 6 + newLength;
-
+	print_frame(ll->frame, ll->frameSize);
 	start_alarm(a);
 	get_possible_responses(responses);
 
-	if (!send_information_frame(frame, ll->frameSize))
+	if (!send_information_frame(ll->frame, ll->frameSize))
 		return -1;
 
 	do
@@ -100,7 +99,7 @@ int llwrite(int fd, char *buffer, int length)
 		}
 		else if (receive_supervision_frame(TRANSMITTER, responses[1]))
 			printf("REJ received. Attempts: %d\n", a->counter++);
-		else if (!(bytes = send_information_frame(frame, ll->frameSize)))
+		else if (!(bytes = send_information_frame(ll->frame, ll->frameSize)))
 			return -1;
 
 	} while (a->counter < MAXTRANSMISSIONS);
@@ -118,10 +117,10 @@ int llread(int fd, char *buffer)
 
 	while (!bufferFull)
 	{
-		if(!receive_information_frame(RECEIVER, SET))
+		if(!receive_information_frame(RECEIVER))
 			return 0;
 
-		if ((bytesRead = unstuff_information_frame(ll->frame, ll->frameSize - 6)) < 0)
+		if ((bytesRead = unstuff_information_frame(ll->frame, ll->frameSize)) < 0)
 			return 0;
 
 		int controlByte;
@@ -317,6 +316,7 @@ LinkLayer *new_link_layer()
 		return NULL;
 
 	ll->sequenceNumber = 0;
+	ll->frameSize = 0;
 	ll->frame = (unsigned char *)malloc(0);
 
 	return ll;

@@ -88,6 +88,16 @@ void wait_address_handler(StateMachine *machine)
 
 void wait_control_handler(StateMachine *machine)
 {
+	if (machine->isInfoFrame)
+	{
+		if (ll->sequenceNumber == SEQ(1) && machine->byte == SEQ(0))
+			machine->state = WAIT_BCC;
+		else if (ll->sequenceNumber == SEQ(0) && machine->byte == SEQ(1))
+			machine->state = WAIT_BCC;
+		else
+			machine->state = START;
+		return;
+	}
 	switch(machine->byte)
 	{
 		case FLAG:

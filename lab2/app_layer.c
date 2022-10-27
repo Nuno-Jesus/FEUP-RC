@@ -71,15 +71,14 @@ int resolve_control_packet(unsigned char *packet, int *filesize, char *filename)
 	else
 		return 0;
 
+	printf("Received Control Packet\n");
 	return 1;
 }
 
 int receive_file(char *portname)
 {
-	//int fd;
-	//char *content;
-
-	app->device = RECEIVER;
+	if (!(app = new_app_layer(RECEIVER)))
+		return 0;
 
 	if ((app->fd = llopen(portname, app->device)) == -1)
 		return 0;
@@ -178,12 +177,12 @@ int receive_file(char *portname)
 int assemble_control_packet(unsigned char *p, PacketControl control, char *filename, int filesize)
 {
 	int len;
-	int packetsize; 
+	int packetSize; 
 	unsigned char *filesizeStr = (unsigned char *)malloc(0);
 
 	len = tobytes(filesize, filesizeStr);
-	packetsize = 5 + strlen(filename) + len;
-	if(!(p = (unsigned char *) malloc(packetsize * sizeof(char))))
+	packetSize = 5 + strlen(filename) + len;
+	if(!(p = (unsigned char *) malloc(packetSize * sizeof(char))))
 		return 0;
 
 	p[0] = control;
@@ -195,7 +194,7 @@ int assemble_control_packet(unsigned char *p, PacketControl control, char *filen
 	p[3 + len + 1] = (unsigned char) strlen(filename);
 	memcpy(p + (3 + len + 2), filename, strlen(filename));
 
-	return 1;
+	return packetSize;
 }
 
 int assemble_data_packet(unsigned char *p, unsigned char* data, int dataSize, int sequenceNumber)
@@ -211,7 +210,7 @@ int assemble_data_packet(unsigned char *p, unsigned char* data, int dataSize, in
 	p[3] = dataSize % 256;
 	memcpy(p + 4, data, dataSize);
 
-	return 1;
+	return packetSize;
 }
 
 int send_file(char *portname, char *filename)
