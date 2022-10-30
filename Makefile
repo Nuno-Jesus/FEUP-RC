@@ -3,7 +3,8 @@ FLAGS =
 DEPS = .
 
 TARGET = alarm.o app_layer.o file.o link_layer.o port.o state_machine.o utils.o
-NAME = project
+EXEC1 = receiver
+EXEC2 = transmitter
 
 %.o : %.c 
 	$(CC) $(FLAGS) -c $< -o $@ -I $(DEPS)
@@ -11,16 +12,16 @@ NAME = project
 all: receiver transmitter
 
 receiver: $(TARGET)
-	$(CC) $(FLAGS) receiver.c -o $(NAME) $(TARGET) -I $(DEPS)
+	$(CC) $(FLAGS) receiver.c -o $(EXEC1) $(TARGET) -I $(DEPS)
 
 transmitter: $(TARGET)
-	$(CC) $(FLAGS) transmitter.c -o $(NAME) $(TARGET) -I $(DEPS)
+	$(CC) $(FLAGS) transmitter.c -o $(EXEC2) $(TARGET) -I $(DEPS)
 
 clean:
 	rm -f $(TARGET)
 
 fclean: clean
-	rm -f $(NAME)
+	rm -f $(EXEC1) $(EXEC2)
 
 re: fclean all
 

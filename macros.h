@@ -78,8 +78,8 @@ typedef enum device_t
 #define BCC(a, c) a ^ c
 #define SEQ(s) s << 6
 
-#define TRANSMITTER_PORT "/dev/ttyS5"
-#define RECEIVER_PORT "/dev/ttyS0"
+#define TRANSMITTER_PORT "/dev/ttyS10"
+#define RECEIVER_PORT "/dev/ttyS11"
 
 #define TIMEOUT 3
 #define MAXTRANSMISSIONS 3
