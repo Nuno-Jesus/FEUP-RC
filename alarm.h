@@ -5,6 +5,7 @@
 
 typedef struct alarm_h
 {
+	int isActive;
 	unsigned int counter;
 	unsigned int timeout;
 	void (*handler)(int);

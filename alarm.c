@@ -9,6 +9,7 @@ Alarm *new_alarm(void (*handler)(int), unsigned int timeout)
 		return NULL;
 
 	alarm->counter = 0;
+	alarm->isActive = FALSE;
 	alarm->timeout = timeout;
 	alarm->handler = !handler ? default_handler : handler;
 
@@ -30,24 +31,27 @@ void start_alarm(Alarm *a)
 	alarm(a->timeout);
 	a->counter = 0;
 	#ifdef DEBUG
-		printf("Started alarm with %lu seconds\n", a->timeout);
+		printf("\n\t>>> ALARM STARTED <<<\n\n", a->timeout);
 	#endif
 }
 
 void stop_alarm()
 {
 	alarm(0);
+	a->isActive = FALSE;
+
 	#ifdef DEBUG
-		printf("Alarm stopped.\n");
+		printf("\n\t>>> ALARM STOPPED <<<\n\n");
 	#endif
 }
 
 void default_handler(int signal)
 {
 	#ifdef DEBUG
-		printf("Timeout #%d occured.\n", a->counter);
+		printf("\n\t>>>TIMEOUT #%d <<<\n\n", a->counter);
 	#endif
 
 	a->counter++;
+	a->isActive = FALSE;
 	alarm(a->timeout);
 }
