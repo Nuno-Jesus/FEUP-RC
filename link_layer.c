@@ -224,22 +224,24 @@ int llread(int fd, char *buffer)
 
 int llopen_transmitter()
 {
-	if (!send_supervision_frame(SET))
-		return 0;
-
 	start_alarm(a);
 
 	do
 	{
-		printf("Sending SET frame.\n");
-		if (receive_supervision_frame(TRANSMITTER, UA))
+		if(!a->isActive)
 		{
-			printf("REceived UA frame.\n");
-			stop_alarm();
-			break;
+			a->isActive = TRUE;
+			if (!send_supervision_frame(SET))
+				return 0;
+
+			printf("Sending SET frame.\n");
+			if (receive_supervision_frame(TRANSMITTER, UA))
+			{
+				printf("Received UA frame.\n");
+				stop_alarm();
+				break;
+			}
 		}
-		else if (!send_supervision_frame(SET))
-			return 0;
 		// In case of a timeout when reading the UA frame, a new alarm is setted up
 		// and a->counter is incremented. It pretty much works like calling the handler
 		// at the end of a send/receive pair
@@ -250,22 +252,20 @@ int llopen_transmitter()
 
 int llopen_receiver()
 {
-	if (!receive_supervision_frame(RECEIVER, SET))
-		return 0;
-
 	start_alarm(a);
 
 	do
 	{
-		printf("Received SET frame.\n");
-		if (send_supervision_frame(UA))
+		if (receive_supervision_frame(RECEIVER, SET))
 		{
+			printf("Received SET frame.\n");
+			if(!send_supervision_frame(UA))
+				return 0;
+				
 			printf("Sending UA frame.\n");
 			stop_alarm();
 			break;
 		}
-		else if (!receive_supervision_frame(RECEIVER, SET))
-			return 0;
 		// In case of a timeout when reading the UA frame, a new alarm is setted up
 		// and a->counter is incremented. It pretty much works like calling the handler
 		// at the end of a send/receive pair

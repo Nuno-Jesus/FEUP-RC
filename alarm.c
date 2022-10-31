@@ -31,7 +31,7 @@ void start_alarm(Alarm *a)
 	alarm(a->timeout);
 	a->counter = 0;
 	#ifdef DEBUG
-		printf("\n\t>>> ALARM STARTED <<<\n\n", a->timeout);
+		printf("\n\t>>> ALARM STARTED <<<\n\n");
 	#endif
 }
 
