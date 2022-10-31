@@ -82,7 +82,7 @@ int llwrite(int fd, char *buffer, int length)
 		return -1;
 
 	ll->frameSize = 6 + newLength;
-	//print_frame(ll->frame, ll->frameSize);
+	// print_frame(ll->frame, ll->frameSize);
 	start_alarm(a);
 	get_possible_responses(responses);
 
@@ -104,7 +104,7 @@ int llwrite(int fd, char *buffer, int length)
 
 	} while (a->counter < MAXTRANSMISSIONS);
 
-	// ll->sequenceNumber = !ll->sequenceNumber;
+	ll->sequenceNumber = !ll->sequenceNumber;
 
 	return bytes;
 }
@@ -121,15 +121,19 @@ int llread(int fd, char *buffer)
 		if (!receive_information_frame(RECEIVER))
 			return 0;
 
-		// print_frame(ll->frame, ll->frameSize);
+#ifdef DEBUG
+		print_frame(ll->frame, ll->frameSize);
+#endif
 
 		// Unstuff it
 		if ((bytesRead = unstuff_information_frame(ll->frame, ll->frameSize)) < 0)
 			return 0;
 
-		// printf("Size after destuffing: %d\n", bytesRead);
+			// printf("Size after destuffing: %d\n", bytesRead);
 
-		// print_frame(ll->frame, ll->frameSize);
+#ifdef DEBUG
+		print_frame(ll->frame, ll->frameSize);
+#endif
 
 		// Parse the control byte (Sequence Number)
 		int controlByte;
@@ -142,25 +146,18 @@ int llread(int fd, char *buffer)
 		// Get the bbc2 field
 		int bcc2 = ll->frame[bytesRead - 2];
 
-		//printf("bbc2 is %d\n", ll->frame[bytesRead - 2]);
-		//printf("get_bcc2 is %d\n", get_bcc2(&ll->frame[4], bytesRead - 6));
+		// printf("bbc2 is %d\n", ll->frame[bytesRead - 2]);
+		// printf("get_bcc2 is %d\n", get_bcc2(&ll->frame[4], bytesRead - 6));
 
 		// Check if bcc2 is correct
 		if (bcc2 == get_bcc2(&ll->frame[4], bytesRead - 6))
 		{
 			if (controlByte != ll->sequenceNumber)
 			{
-				if (!controlByte)
-				{
-					responseByte = RR01;
-					ll->sequenceNumber = 1;
-				}
-				else
-				{
-					responseByte = RR00;
-					ll->sequenceNumber = 0;
-				}
+				responseByte = (controlByte == 1) ? RR00 : RR01;
+				ll->sequenceNumber = (controlByte == 1) ? 0 : 1;
 			}
+
 			else
 			{
 				for (int i = 0; i < bytesRead; i++)
@@ -182,9 +179,10 @@ int llread(int fd, char *buffer)
 				}
 			}
 		}
-		// bcc2 was incorrect
+		// error in the data field
 		else
 		{
+			// If this is a duplicated frame, do nothing with the data, and send RR(N)
 			if (controlByte != ll->sequenceNumber)
 			{
 				if (!controlByte)
@@ -198,17 +196,18 @@ int llread(int fd, char *buffer)
 					ll->sequenceNumber = 0;
 				}
 			}
+			// If this is a new frame, request a retrasmission with REJ(N)
 			else
 			{
 				if (!controlByte)
 				{
-					responseByte = REJ01;
-					ll->sequenceNumber = 1;
+					responseByte = REJ00;
+					ll->sequenceNumber = 0;
 				}
 				else
 				{
-					responseByte = REJ00;
-					ll->sequenceNumber = 0;
+					responseByte = REJ01;
+					ll->sequenceNumber = 1;
 				}
 			}
 		}
@@ -228,7 +227,7 @@ int llopen_transmitter()
 
 	do
 	{
-		if(!a->isActive)
+		if (!a->isActive)
 		{
 			a->isActive = TRUE;
 			if (!send_supervision_frame(SET))
@@ -259,7 +258,7 @@ int llopen_receiver()
 		if (receive_supervision_frame(RECEIVER, SET))
 		{
 			printf("Received SET frame.\n");
-			if(!send_supervision_frame(UA))
+			if (!send_supervision_frame(UA))
 				return 0;
 
 			printf("Sending UA frame.\n");

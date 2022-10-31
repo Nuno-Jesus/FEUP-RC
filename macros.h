@@ -52,7 +52,7 @@ typedef enum device_t
 	TRANSMITTER
 } Device;
 
-#define DEBUG
+//#define DEBUG
 
 #define FLAG 0x7E
 #define ADDRESS 0x03

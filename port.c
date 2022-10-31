@@ -92,8 +92,8 @@ int send_supervision_frame(FrameControl field)
 	free(frame);
 
 	bytes >= 0
-		? printf("Sending supervision frame\n")
-		: printf("Couldn't send the supervision frame\n");
+		? printf("Sending supervision frame - Field:%d\n", field)
+		: printf("Couldn't send the supervision frame - Field:%d\n", field);
 	return bytes;
 }
 
@@ -130,7 +130,7 @@ int receive_information_frame(Device device)
 
 	while (machine->state != END)
 	{
-		//printf("Machine State: %d\n", machine->state);
+		printf("Machine State: %d\n", machine->state);
 
 		if (!read(port->fd, &machine->byte, 1))
 			return 0;
@@ -142,7 +142,7 @@ int receive_information_frame(Device device)
 		state_machine_multiplexer(machine);
 	}
 
-	//print_frame(ll->frame, ll->frameSize);
+	// print_frame(ll->frame, ll->frameSize);
 
 	return 1;
 }

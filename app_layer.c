@@ -197,20 +197,21 @@ unsigned char* assemble_control_packet(int *packetSize, PacketControl control, c
 	return res;
 }
 
-int assemble_data_packet(unsigned char *p, unsigned char* data, int dataSize, int sequenceNumber)
+unsigned char* assemble_data_packet(int *packetSize, unsigned char* data, int dataSize, int sequenceNumber)
 {
-	int packetSize = 4 + dataSize;
+	unsigned char *res;
 
-	if(!(p = (unsigned char *)malloc(packetSize * sizeof(char))))
+	*packetSize = 4 + dataSize;
+	if(!(res = (unsigned char *)malloc(*packetSize * sizeof(char))))
 		return 0;
 
-	p[0] = DATA_PACKET;
-	p[1] = sequenceNumber;
-	p[2] = dataSize / 256;
-	p[3] = dataSize % 256;
-	memcpy(p + 4, data, dataSize);
+	res[0] = DATA_PACKET;
+	res[1] = sequenceNumber;
+	res[2] = dataSize / 256;
+	res[3] = dataSize % 256;
+	memcpy(res + 4, data, dataSize);
 
-	return packetSize;
+	return res;
 }
 
 int send_file(char *portname, char *filename)
@@ -255,7 +256,7 @@ int send_file(char *portname, char *filename)
 		else
 			packetSize = MAX_DATA;
 
-		if (!(packetSize = assemble_data_packet((unsigned char *)packet,(unsigned char *) file + i, packetSize, seqNum)))
+		if (!(packet = assemble_data_packet(&packetSize,(unsigned char *) file + i, packetSize, seqNum)))
 			return 0;
 
 		if (llwrite(app->fd, packet, packetSize) == -1)
