@@ -82,7 +82,7 @@ int llwrite(int fd, char *buffer, int length)
 		return -1;
 
 	ll->frameSize = 6 + newLength;
-	print_frame(ll->frame, ll->frameSize);
+	//print_frame(ll->frame, ll->frameSize);
 	start_alarm(a);
 	get_possible_responses(responses);
 
@@ -261,7 +261,7 @@ int llopen_receiver()
 			printf("Received SET frame.\n");
 			if(!send_supervision_frame(UA))
 				return 0;
-				
+
 			printf("Sending UA frame.\n");
 			stop_alarm();
 			break;

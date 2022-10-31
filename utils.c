@@ -18,7 +18,7 @@ void print_error(char *message)
 void print_frame(unsigned char *data, size_t n)
 {
 	for (size_t i = 0; i < n; i++)
-		printf("%ld - 0x%x\n", i, data[i]);
+		printf("%03ld - 0x%02X - '%c'\n", i, data[i], data[i]);
 	printf("\n");
 }
 
@@ -57,7 +57,7 @@ unsigned char get_bcc2(unsigned char *data, unsigned long size)
 	if (!data || !size)
 		return 0;
 
-	print_frame(data, size);
+	//print_frame(data, size);
 
 	unsigned char res = data[0];
 

@@ -174,27 +174,27 @@ int receive_file(char *portname)
 		return 0;
 }
 
-int assemble_control_packet(unsigned char *p, PacketControl control, char *filename, int filesize)
+unsigned char* assemble_control_packet(int *packetSize, PacketControl control, char *filename, int filesize)
 {
 	int len;
-	int packetSize;
+	unsigned char *res;
 	unsigned char *filesizeStr = (unsigned char *)malloc(0);
 
-	len = tobytes(filesize, filesizeStr);
-	packetSize = 5 + strlen(filename) + len;
-	if(!(p = (unsigned char *) malloc(packetSize * sizeof(char))))
+	len = tobytes(filesize, filesizeStr) - 1;
+	*packetSize = 5 + strlen(filename) + len;
+	if(!(res = (unsigned char *) malloc(*packetSize * sizeof(char))))
 		return 0;
 
-	p[0] = control;
-	p[1] = FILESIZE;
-	p[2] = (unsigned char) len;
-	memcpy(p + 3, filesizeStr, len);
+	res[0] = control;
+	res[1] = FILESIZE;
+	res[2] = (unsigned char) len;
+	memcpy(res + 3, filesizeStr, len);
 
-	p[3 + len] = FILENAME;
-	p[3 + len + 1] = (unsigned char) strlen(filename);
-	memcpy(p + (3 + len + 2), filename, strlen(filename));
+	res[3 + len] = FILENAME;
+	res[3 + len + 1] = (unsigned char) strlen(filename);
+	memcpy(res + (3 + len + 2), filename, strlen(filename));
 
-	return packetSize;
+	return res;
 }
 
 int assemble_data_packet(unsigned char *p, unsigned char* data, int dataSize, int sequenceNumber)
@@ -218,7 +218,7 @@ int send_file(char *portname, char *filename)
 	int fileSize;
 	int packetSize;
 	char *file;
-	char *packet = (char *)malloc(0);
+	unsigned char *packet;
 
 	if (!(app = new_app_layer(TRANSMITTER)))
 		return 0;
@@ -231,8 +231,13 @@ int send_file(char *portname, char *filename)
 
 	fileSize = get_file_size(filename);
 
-	if (!(packetSize = assemble_control_packet((unsigned char *)packet, START_PACKET, filename, fileSize)))
+	if (!(packet = assemble_control_packet(&packetSize, START_PACKET, filename, fileSize)))
 		return 0;
+
+	#ifdef DEBUG
+		printf("\n\tAssembled Control Packet\n\n");
+		print_frame(packet, packetSize);
+	#endif
 
 	if (llwrite(app->fd, packet, packetSize) == -1)
 	{
@@ -263,7 +268,7 @@ int send_file(char *portname, char *filename)
 		seqNum = (seqNum + 1) % 256;
 	}
 
-	if (!(packetSize = assemble_control_packet((unsigned char *)packet, END_PACKET, filename, fileSize)))
+	if (!(packet = assemble_control_packet(&packetSize, END_PACKET, filename, fileSize)))
 		return 0;
 
 	llwrite(app->fd, packet, packetSize);
