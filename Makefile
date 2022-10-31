@@ -9,7 +9,7 @@ EXEC2 = transmitter
 %.o : %.c 
 	$(CC) $(FLAGS) -c $< -o $@ -I $(DEPS)
 
-all: receiver transmitter
+all: receiver transmitter clean
 
 receiver: $(TARGET)
 	$(CC) $(FLAGS) receiver.c -o $(EXEC1) $(TARGET) -I $(DEPS)
