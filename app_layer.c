@@ -177,7 +177,7 @@ int receive_file(char *portname)
 int assemble_control_packet(unsigned char *p, PacketControl control, char *filename, int filesize)
 {
 	int len;
-	int packetSize; 
+	int packetSize;
 	unsigned char *filesizeStr = (unsigned char *)malloc(0);
 
 	len = tobytes(filesize, filesizeStr);
@@ -252,7 +252,7 @@ int send_file(char *portname, char *filename)
 
 		if (!(packetSize = assemble_data_packet((unsigned char *)packet,(unsigned char *) file + i, packetSize, seqNum)))
 			return 0;
-		
+
 		if (llwrite(app->fd, packet, packetSize) == -1)
 		{
 			canonical_close(app->fd);

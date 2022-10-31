@@ -57,6 +57,8 @@ unsigned char get_bcc2(unsigned char *data, unsigned long size)
 	if (!data || !size)
 		return 0;
 
+	print_frame(data, size);
+
 	unsigned char res = data[0];
 
 	for (unsigned long i = 1; i < size; i++)
@@ -71,27 +73,27 @@ int stuff_information_frame(unsigned char *frame, int size)
 		return 0;
 
 	unsigned char *buf; // 4 bytes for the header + size of the data packet + 2 bytes for the tail
-	int newSize = size; 
+	int newSize = size;
 
-	if(!(buf = (unsigned char *)malloc(size * sizeof(unsigned char))))
+	if (!(buf = (unsigned char *)malloc(size * sizeof(unsigned char))))
 		return 0;
 
 	for (int i = 0, j = 0; i < size; i++)
 	{
-		if(frame[i] == FLAG)
+		if (frame[i] == FLAG)
 		{
 			buf = realloc(buf, ++newSize);
 			buf[j] = ESCAPE;
 			buf[j + 1] = FLAG_STUFFED;
 			j += 2;
 		}
-		else if(frame[i] == ESCAPE)
+		else if (frame[i] == ESCAPE)
 		{
 			buf = realloc(buf, ++newSize);
 			buf[j] = ESCAPE;
 			buf[j + 1] = ESCAPE_STUFFED;
 			j += 2;
-		} 
+		}
 		else
 		{
 			buf[j] = frame[i];
@@ -108,12 +110,12 @@ int stuff_information_frame(unsigned char *frame, int size)
 
 int unstuff_information_frame(unsigned char *frame, int size)
 {
-	unsigned char* buf;
+	unsigned char *buf;
 	int newSize = size;
 
-	if(!(buf = (unsigned char *)malloc(size)))
+	if (!(buf = (unsigned char *)malloc(size)))
 		return 0;
-	
+
 	for (int j = 0, i = 0; i < size; j++)
 	{
 		if (frame[i] == ESCAPE)

@@ -49,7 +49,7 @@ void get_possible_responses(unsigned char responses[])
 	}
 }
 
-unsigned char* assemble_information_frame(unsigned char *buffer, int length)
+unsigned char *assemble_information_frame(unsigned char *buffer, int length)
 {
 	unsigned char *frame;
 	int size;
@@ -63,7 +63,7 @@ unsigned char* assemble_information_frame(unsigned char *buffer, int length)
 	frame[2] = SEQ(ll->sequenceNumber);
 	frame[3] = BCC(frame[1], frame[2]);
 	memcpy(frame + 4, buffer, length);
-	frame[4 + length] = get_bcc2(buffer + 4, length - 4);
+	frame[4 + length] = get_bcc2(frame + 4, length);
 	frame[4 + length + 1] = FLAG;
 
 	return frame;
@@ -80,7 +80,7 @@ int llwrite(int fd, char *buffer, int length)
 
 	if (!(ll->frame = assemble_information_frame(buffer, newLength)))
 		return -1;
-		
+
 	ll->frameSize = 6 + newLength;
 	print_frame(ll->frame, ll->frameSize);
 	start_alarm(a);
@@ -104,7 +104,7 @@ int llwrite(int fd, char *buffer, int length)
 
 	} while (a->counter < MAXTRANSMISSIONS);
 
-	ll->sequenceNumber = !ll->sequenceNumber;
+	// ll->sequenceNumber = !ll->sequenceNumber;
 
 	return bytes;
 }
@@ -117,21 +117,33 @@ int llread(int fd, char *buffer)
 
 	while (!bufferFull)
 	{
-		if(!receive_information_frame(RECEIVER))
+		// Read the frame
+		if (!receive_information_frame(RECEIVER))
 			return 0;
 
+		// print_frame(ll->frame, ll->frameSize);
+
+		// Unstuff it
 		if ((bytesRead = unstuff_information_frame(ll->frame, ll->frameSize)) < 0)
 			return 0;
 
+		// printf("Size after destuffing: %d\n", bytesRead);
+
+		// print_frame(ll->frame, ll->frameSize);
+
+		// Parse the control byte (Sequence Number)
 		int controlByte;
 
-		if (ll->frame[2] == SEQ(0))
+		if (!ll->frame[2])
 			controlByte = 0;
-
 		else
 			controlByte = 1;
 
+		// Get the bbc2 field
 		int bcc2 = ll->frame[bytesRead - 2];
+
+		//printf("bbc2 is %d\n", ll->frame[bytesRead - 2]);
+		//printf("get_bcc2 is %d\n", get_bcc2(&ll->frame[4], bytesRead - 6));
 
 		// Check if bcc2 is correct
 		if (bcc2 == get_bcc2(&ll->frame[4], bytesRead - 6))
@@ -151,40 +163,46 @@ int llread(int fd, char *buffer)
 			}
 			else
 			{
-				for (int i = 0; i < bytesRead; i++){
+				for (int i = 0; i < bytesRead; i++)
+				{
 					buffer[i] = ll->frame[4 + i];
 				}
 
 				bufferFull = true;
 
-				if(!controlByte){
-					responseByte = RR01; 
-					ll->sequenceNumber = 1; 
+				if (!controlByte)
+				{
+					responseByte = RR01;
+					ll->sequenceNumber = 1;
 				}
-				else{
+				else
+				{
 					responseByte = RR00;
 					ll->sequenceNumber = 0;
 				}
 			}
 		}
 		// bcc2 was incorrect
-		else {
+		else
+		{
 			if (controlByte != ll->sequenceNumber)
 			{
-				if(!controlByte){
-					responseByte = RR01; 
-					ll->sequenceNumber = 1; 
+				if (!controlByte)
+				{
+					responseByte = RR01;
+					ll->sequenceNumber = 1;
 				}
-				else{
+				else
+				{
 					responseByte = RR00;
 					ll->sequenceNumber = 0;
 				}
 			}
 			else
 			{
-				if (!controlByte) 
+				if (!controlByte)
 				{
-					responseByte = REJ01; 
+					responseByte = REJ01;
 					ll->sequenceNumber = 1;
 				}
 				else
@@ -196,7 +214,9 @@ int llread(int fd, char *buffer)
 		}
 	}
 
-	if(!send_supervision_frame(responseByte))
+	printf("Response Byte: %d\n", responseByte);
+
+	if (!send_supervision_frame(responseByte))
 		return 0;
 
 	return (bytesRead - 6);
