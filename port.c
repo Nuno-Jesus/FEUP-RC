@@ -88,12 +88,14 @@ int send_supervision_frame(FrameControl field)
 	ssize_t bytes;
 	unsigned char *frame = assemble_supervision_frame(field);
 
+	#ifdef DEBUG
+		printf("\n\tSENDING FRAME %d\n\n", field);
+		print_frame(frame, 5);
+	#endif
+
 	bytes = write(port->fd, frame, 5);
 	free(frame);
 
-	bytes >= 0
-		? printf("Sending supervision frame - Field:%d\n", field)
-		: printf("Couldn't send the supervision frame - Field:%d\n", field);
 	return bytes;
 }
 
@@ -103,14 +105,27 @@ int receive_supervision_frame(Device device, FrameControl field)
 	if (!machine)
 		return 0;
 
+	printf("Expected Response: %d\n", field);
 	while (machine->state != END)
 	{
+
 		if (!read(port->fd, &machine->byte, 1))
 			return 0;
 
+		#ifdef DEBUG
+			printf("---------------------------------------\n");
+			printf("Current byte: %02X\n", machine->byte);
+			printf("State before parsing current byte: %d\n", machine->state);
+		#endif
+
 		state_machine_multiplexer(machine);
+
+		#ifdef DEBUG
+			printf("State after parsing current byte: %d\n", machine->state);
+		#endif
 	}
 
+	delete_state_machine(machine);
 	return 1;
 }
 
@@ -118,7 +133,7 @@ int send_information_frame(unsigned char *frame, int size)
 {
 	if (!write(port->fd, frame, size))
 		return 0;
-
+	
 	return 1;
 }
 
@@ -130,7 +145,9 @@ int receive_information_frame(Device device)
 
 	while (machine->state != END)
 	{
-		printf("Machine State: %d\n", machine->state);
+		#ifdef DEBUG
+			//printf("Machine State: %d\n", machine->state);
+		#endif
 
 		if (!read(port->fd, &machine->byte, 1))
 			return 0;
@@ -143,7 +160,7 @@ int receive_information_frame(Device device)
 	}
 
 	// print_frame(ll->frame, ll->frameSize);
-
+	delete_state_machine(machine);
 	return 1;
 }
 
@@ -158,35 +175,35 @@ unsigned char *assemble_supervision_frame(FrameControl field)
 	// Apply switch to further cases of other supervision frames
 	switch (field)
 	{
-	case SET:
-		frame[2] = CONTROL_SET;
-		frame[3] = BCC_SET;
-		break;
-	case UA:
-		frame[2] = CONTROL_UA;
-		frame[3] = BCC_UA;
-		break;
-	case DISC:
-		frame[2] = CONTROL_DISC;
-		frame[3] = BCC_DISC;
-		break;
-	case REJ00:
-		frame[2] = CONTROL_REJ(0);
-		frame[3] = BCC_REJ(0);
-		break;
-	case REJ01:
-		frame[2] = CONTROL_REJ(1);
-		frame[3] = BCC_REJ(1);
-		break;
-	case RR00:
-		frame[2] = CONTROL_RR(0);
-		frame[3] = BCC_RR(0);
-		break;
-	case RR01:
-		frame[2] = CONTROL_RR(1);
-		frame[3] = BCC_RR(1);
-		break;
-	}
+		case SET:
+			frame[2] = CONTROL_SET;
+			frame[3] = BCC_SET;
+			break;
+		case UA:
+			frame[2] = CONTROL_UA;
+			frame[3] = BCC_UA;
+			break;
+		case DISC:
+			frame[2] = CONTROL_DISC;
+			frame[3] = BCC_DISC;
+			break;
+		case REJ00:
+			frame[2] = CONTROL_REJ(0);
+			frame[3] = BCC_REJ(0);
+			break;
+		case REJ01:
+			frame[2] = CONTROL_REJ(1);
+			frame[3] = BCC_REJ(1);
+			break;
+		case RR00:
+			frame[2] = CONTROL_RR(0);
+			frame[3] = BCC_RR(0);
+			break;
+		case RR01:
+			frame[2] = CONTROL_RR(1);
+			frame[3] = BCC_RR(1);
+			break;
+		}
 	frame[4] = FLAG;
 
 	return frame;

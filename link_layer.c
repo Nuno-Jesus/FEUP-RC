@@ -82,27 +82,38 @@ int llwrite(int fd, char *buffer, int length)
 		return -1;
 
 	ll->frameSize = 6 + newLength;
-	// print_frame(ll->frame, ll->frameSize);
+	// print_frame(ll->frame, ll->framsdeSize);
 	start_alarm(a);
 	get_possible_responses(responses);
 
 	if (!send_information_frame(ll->frame, ll->frameSize))
 		return -1;
-
+	
+	#ifdef DEBUG
+		print_frame(ll->frame, ll->frameSize);
+	#endif
+	
 	do
 	{
-		printf("Sending data frame (length = %d).\n", length);
-		if (receive_supervision_frame(TRANSMITTER, responses[0]))
+		if (!a->isActive)
 		{
-			stop_alarm();
-			break;
+			a->isActive = TRUE;
+			printf("Sending data frame (length = %d).\n", length);
+			if (receive_supervision_frame(TRANSMITTER, responses[0]))
+			{	
+				printf("RR %d received.\n", responses[0]);
+				stop_alarm();
+				break;
+			}
+			else if (receive_supervision_frame(TRANSMITTER, responses[1]))
+				printf("REJ received. Attempts: %d\n", a->counter++);
+			else if (!(bytes = send_information_frame(ll->frame, ll->frameSize)))
+				return -1;
 		}
-		else if (receive_supervision_frame(TRANSMITTER, responses[1]))
-			printf("REJ received. Attempts: %d\n", a->counter++);
-		else if (!(bytes = send_information_frame(ll->frame, ll->frameSize)))
-			return -1;
 
-	} while (a->counter < MAXTRANSMISSIONS);
+		if(a->counter >= MAXTRANSMISSIONS)
+			return -1;
+	} while (1);
 
 	ll->sequenceNumber = !ll->sequenceNumber;
 
@@ -121,9 +132,10 @@ int llread(int fd, char *buffer)
 		if (!receive_information_frame(RECEIVER))
 			return 0;
 
-#ifdef DEBUG
-		print_frame(ll->frame, ll->frameSize);
-#endif
+		#ifdef DEBUG
+			printf("\n\tBEFORE DESTUFFING\n\n");
+			print_frame(ll->frame, ll->frameSize);
+		#endif
 
 		// Unstuff it
 		if ((bytesRead = unstuff_information_frame(ll->frame, ll->frameSize)) < 0)
@@ -131,17 +143,13 @@ int llread(int fd, char *buffer)
 
 			// printf("Size after destuffing: %d\n", bytesRead);
 
-#ifdef DEBUG
-		print_frame(ll->frame, ll->frameSize);
-#endif
+		#ifdef DEBUG
+			printf("\n\tAFTER DESTUFFING\n\n");
+			print_frame(ll->frame, ll->frameSize);
+		#endif
 
 		// Parse the control byte (Sequence Number)
-		int controlByte;
-
-		if (!ll->frame[2])
-			controlByte = 0;
-		else
-			controlByte = 1;
+		int controlByte = ll->frame[2] == 0 ? 0 : 1;
 
 		// Get the bbc2 field
 		int bcc2 = ll->frame[bytesRead - 2];
@@ -160,23 +168,11 @@ int llread(int fd, char *buffer)
 
 			else
 			{
-				for (int i = 0; i < bytesRead; i++)
-				{
-					buffer[i] = ll->frame[4 + i];
-				}
-
 				bufferFull = true;
+				memcpy(buffer, ll->frame + 4, bytesRead);
 
-				if (!controlByte)
-				{
-					responseByte = RR01;
-					ll->sequenceNumber = 1;
-				}
-				else
-				{
-					responseByte = RR00;
-					ll->sequenceNumber = 0;
-				}
+				responseByte = (controlByte == 1) ? RR00 : RR01;
+				ll->sequenceNumber = (controlByte == 1) ? 0 : 1;
 			}
 		}
 		// error in the data field
@@ -185,35 +181,17 @@ int llread(int fd, char *buffer)
 			// If this is a duplicated frame, do nothing with the data, and send RR(N)
 			if (controlByte != ll->sequenceNumber)
 			{
-				if (!controlByte)
-				{
-					responseByte = RR01;
-					ll->sequenceNumber = 1;
-				}
-				else
-				{
-					responseByte = RR00;
-					ll->sequenceNumber = 0;
-				}
+				responseByte = (controlByte == 1) ? RR00 : RR01;
+				ll->sequenceNumber = (controlByte == 1) ? 0 : 1;
 			}
 			// If this is a new frame, request a retrasmission with REJ(N)
 			else
 			{
-				if (!controlByte)
-				{
-					responseByte = REJ00;
-					ll->sequenceNumber = 0;
-				}
-				else
-				{
-					responseByte = REJ01;
-					ll->sequenceNumber = 1;
-				}
+				responseByte = (controlByte == 1) ? REJ01 : REJ00;
+				ll->sequenceNumber = (controlByte == 1) ? 1 : 0;
 			}
 		}
 	}
-
-	printf("Response Byte: %d\n", responseByte);
 
 	if (!send_supervision_frame(responseByte))
 		return 0;

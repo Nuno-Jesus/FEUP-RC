@@ -75,15 +75,15 @@ void wait_address_handler(StateMachine *machine)
 {
 	switch (machine->byte)
 	{
-	case FLAG:
-		machine->state = WAIT_ADDRESS;
-		break;
-	case ADDRESS:
-		machine->state = WAIT_CONTROL;
-		break;
-	default:
-		machine->state = START;
-		break;
+		case FLAG:
+			machine->state = WAIT_ADDRESS;
+			break;
+		case ADDRESS:
+			machine->state = WAIT_CONTROL;
+			break;
+		default:
+			machine->state = START;
+			break;
 	}
 }
 
@@ -105,52 +105,57 @@ void wait_control_handler(StateMachine *machine)
 
 		return;
 	}
+
 	switch (machine->byte)
 	{
-	case FLAG:
-		machine->state = WAIT_ADDRESS;
-		break;
-	case CONTROL_SET:
-		if (machine->controlField == SET)
-			machine->state = WAIT_BCC;
-		else
+		case FLAG:
+			machine->state = WAIT_ADDRESS;
+			break;
+		case CONTROL_SET:
+			if (machine->controlField == SET)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
+			break;
+		case CONTROL_UA:
+			if (machine->controlField == UA)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
+			break;
+		case CONTROL_DISC:
+			if (machine->controlField == DISC)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
+			break;
+		case CONTROL_RR(0):
+			if (machine->controlField == RR00)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
+			break;
+		case CONTROL_RR(1):
+			if (machine->controlField == RR01)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
+			break;
+		case CONTROL_REJ(0):
+			if (machine->controlField == REJ00)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
+			break;
+		case CONTROL_REJ(1):
+			if (machine->controlField == REJ01)
+				machine->state = WAIT_BCC;
+			else
+				machine->state = START;
+			break;
+		default:
 			machine->state = START;
-		break;
-	case CONTROL_UA:
-		if (machine->controlField == UA)
-			machine->state = WAIT_BCC;
-		else
-			machine->state = START;
-		break;
-	case CONTROL_DISC:
-		if (machine->controlField == DISC)
-			machine->state = WAIT_BCC;
-		else
-			machine->state = START;
-		break;
-	case CONTROL_RR(0):
-		if (ll->sequenceNumber == 0 && machine->controlField == RR00)
-			machine->state = WAIT_BCC;
-		else
-			machine->state = START;
-	case CONTROL_RR(1):
-		if (ll->sequenceNumber == 1 && machine->controlField == RR01)
-			machine->state = WAIT_BCC;
-		else
-			machine->state = START;
-	case CONTROL_REJ(0):
-		if (ll->sequenceNumber == 0 && machine->controlField == REJ00)
-			machine->state = WAIT_BCC;
-		else
-			machine->state = START;
-	case CONTROL_REJ(1):
-		if (ll->sequenceNumber == 1 && machine->controlField == REJ01)
-			machine->state = WAIT_BCC;
-		else
-			machine->state = START;
-	default:
-		machine->state = START;
-		break;
+			break;
 	}
 }
 
@@ -181,25 +186,25 @@ void wait_bcc_handler(StateMachine *machine)
 			machine->controlField == START;
 		break;
 	case BCC_RR(0):
-		if (ll->sequenceNumber == 0 && machine->controlField == RR00)
+		if (machine->controlField == RR00)
 			machine->state = WAIT_END_FLAG;
 		else
 			machine->state = START;
 		break;
 	case BCC_RR(1):
-		if (ll->sequenceNumber == 1 && machine->controlField == RR01)
+		if (machine->controlField == RR01)
 			machine->state = WAIT_END_FLAG;
 		else
 			machine->state = START;
 		break;
 	case BCC_REJ(0):
-		if (ll->sequenceNumber == 0 && machine->controlField == REJ01)
+		if (machine->controlField == REJ01)
 			machine->state = WAIT_END_FLAG;
 		else
 			machine->state = START;
 		break;
 	case BCC_REJ(1):
-		if (ll->sequenceNumber == 1 && machine->controlField == REJ01)
+		if (machine->controlField == REJ01)
 			machine->state = WAIT_END_FLAG;
 		else
 			machine->state = START;
