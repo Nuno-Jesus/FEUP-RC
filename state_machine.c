@@ -94,10 +94,10 @@ void wait_control_handler(StateMachine *machine)
 		//printf("Machine Byte: %d\n", machine->byte);
 		//printf("Sequence Number: %d\n", ll->sequenceNumber);
 
-		if (ll->sequenceNumber == SEQ(0) && machine->byte == SEQ(0))
+		if (ll->sequenceNumber == 0 && machine->byte == SEQ(0))
 			machine->state = WAIT_BCC;
 
-		else if (ll->sequenceNumber == SEQ(1) && machine->byte == SEQ(1))
+		else if (ll->sequenceNumber == 1 && machine->byte == SEQ(1))
 			machine->state = WAIT_BCC;
 
 		else

@@ -143,20 +143,31 @@ int receive_information_frame(Device device)
 	if (!machine)
 		return 0;
 
+	State previousState = START;
+
 	while (machine->state != END)
 	{
 		#ifdef DEBUG
-			//printf("Machine State: %d\n", machine->state);
+			printf("Machine Byte: 0x%02X\n", machine->byte);
+			printf("Machine State: %d\n", machine->state);
 		#endif
 
 		if (!read(port->fd, &machine->byte, 1))
 			return 0;
 
-		// save the byte and increment the size of the frame
-		ll->frame = realloc(ll->frame, ++ll->frameSize);
-		ll->frame[ll->frameSize - 1] = machine->byte;
+		#ifdef DEBUG
+			printf("Machine State After: %d\n", machine->state);
+		#endif
 
 		state_machine_multiplexer(machine);
+
+		// save the byte and increment the size of the frame
+		if (machine->state != previousState || machine->state == WAIT_END_FLAG)
+		{
+			ll->frame = realloc(ll->frame, ++ll->frameSize);
+			ll->frame[ll->frameSize - 1] = machine->byte;
+			previousState = machine->state;
+		}
 	}
 
 	// print_frame(ll->frame, ll->frameSize);

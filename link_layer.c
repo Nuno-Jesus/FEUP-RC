@@ -92,7 +92,7 @@ int llwrite(int fd, char *buffer, int length)
 	if (!(ll->frame = assemble_information_frame(buffer, &newLength)))
 		return -1;
 
-	ll->frameSize = 6 + newLength;
+	ll->frameSize = newLength;
 	
 	start_alarm(a);
 	get_possible_responses(responses);
@@ -105,7 +105,7 @@ int llwrite(int fd, char *buffer, int length)
 		if (!a->isActive)
 		{
 			a->isActive = TRUE;
-			printf("Sending data frame (length = %d).\n", length);
+			printf("Sending data frame (size = %d).\n", ll->frameSize);
 			if (receive_supervision_frame(TRANSMITTER, responses[0]))
 			{	
 				printf("RR %d received.\n", responses[0]);
@@ -129,7 +129,7 @@ int llwrite(int fd, char *buffer, int length)
 
 int llread(int fd, char *buffer)
 {
-	int responseByte;
+	int bytesRead, responseByte;
 
 	bool bufferFull = false;
 
@@ -165,6 +165,7 @@ int llread(int fd, char *buffer)
 		// printf("get_bcc2 is %d\n", get_bcc2(&ll->frame[4], ll->frameSize - 6));
 
 		// Check if bcc2 is correct
+		printf("bcc vs get_bcc2: 0x%02X, 0x%02X\n", bcc2, get_bcc2(&ll->frame[4], ll->frameSize - 6));
 		if (bcc2 == get_bcc2(&ll->frame[4], ll->frameSize - 6))
 		{
 			if (controlByte != ll->sequenceNumber)
@@ -175,6 +176,7 @@ int llread(int fd, char *buffer)
 
 			else
 			{
+				printf("BCC is correct\n");
 				bufferFull = true;
 				memcpy(buffer, ll->frame + 4, ll->frameSize);
 
@@ -200,10 +202,18 @@ int llread(int fd, char *buffer)
 		}
 	}
 
+	if (ll->frame)
+	{
+		free(ll->frame);
+		ll->frame = NULL;
+	}
+	bytesRead = ll->frameSize;
+	ll->frameSize = 0;
+
 	if (!send_supervision_frame(responseByte))
 		return 0;
 
-	return (ll->frameSize - 6);
+	return (bytesRead - 6);
 }
 
 int llopen_transmitter()
