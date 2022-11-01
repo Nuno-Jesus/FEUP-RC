@@ -66,6 +66,9 @@ unsigned char *assemble_information_frame(unsigned char *buffer, int length)
 	frame[4 + length] = get_bcc2(frame + 4, length);
 	frame[4 + length + 1] = FLAG;
 
+	#ifdef DEBUG
+		printf("Assembled frame length: %d\n", size);
+	#endif
 	return frame;
 }
 
@@ -75,10 +78,10 @@ int llwrite(int fd, char *buffer, int length)
 	int bytes;
 	int newLength;
 
-	if (!(newLength = stuff_information_frame(buffer, length)))
+	if (!(ll->frame = assemble_information_frame(buffer, newLength)))
 		return -1;
 
-	if (!(ll->frame = assemble_information_frame(buffer, newLength)))
+	if (!(newLength = stuff_information_frame(buffer, length)))
 		return -1;
 
 	ll->frameSize = 6 + newLength;
