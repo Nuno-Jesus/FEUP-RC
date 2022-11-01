@@ -49,12 +49,12 @@ void get_possible_responses(unsigned char responses[])
 	}
 }
 
-unsigned char *assemble_information_frame(unsigned char *buffer, int length)
+unsigned char *assemble_information_frame(unsigned char *buffer, int *length)
 {
-	unsigned char *frame;
+	unsigned char *frame, *res;
 	int size;
 
-	size = 6 + length;
+	size = 6 + *length;
 	if (!(frame = (unsigned char *)malloc(size * sizeof(char))))
 		return NULL;
 
@@ -62,39 +62,43 @@ unsigned char *assemble_information_frame(unsigned char *buffer, int length)
 	frame[1] = ADDRESS;
 	frame[2] = SEQ(ll->sequenceNumber);
 	frame[3] = BCC(frame[1], frame[2]);
-	memcpy(frame + 4, buffer, length);
-	frame[4 + length] = get_bcc2(frame + 4, length);
-	frame[4 + length + 1] = FLAG;
+	memcpy(frame + 4, buffer, *length);
+	frame[4 + *length] = get_bcc2(frame + 4, *length);
+	frame[4 + *length + 1] = FLAG;
 
 	#ifdef DEBUG
 		printf("Assembled frame length: %d\n", size);
+		print_frame(frame, size);
 	#endif
-	return frame;
+
+	if(!(res = stuff_information_frame(frame, &size)))
+		return NULL;
+
+	#ifdef DEBUG
+		printf("Stuffed frame length: %d\n", size);
+		print_frame(res, size);
+	#endif
+
+	*length = size;
+	return res;
 }
 
 int llwrite(int fd, char *buffer, int length)
 {
 	unsigned char responses[2];
 	int bytes;
-	int newLength;
+	int newLength = length;
 
-	if (!(ll->frame = assemble_information_frame(buffer, newLength)))
-		return -1;
-
-	if (!(newLength = stuff_information_frame(buffer, length)))
+	if (!(ll->frame = assemble_information_frame(buffer, &newLength)))
 		return -1;
 
 	ll->frameSize = 6 + newLength;
-	// print_frame(ll->frame, ll->framsdeSize);
+	
 	start_alarm(a);
 	get_possible_responses(responses);
 
 	if (!send_information_frame(ll->frame, ll->frameSize))
 		return -1;
-	
-	#ifdef DEBUG
-		print_frame(ll->frame, ll->frameSize);
-	#endif
 	
 	do
 	{
@@ -125,7 +129,7 @@ int llwrite(int fd, char *buffer, int length)
 
 int llread(int fd, char *buffer)
 {
-	int bytesRead, responseByte;
+	int responseByte;
 
 	bool bufferFull = false;
 
@@ -141,10 +145,10 @@ int llread(int fd, char *buffer)
 		#endif
 
 		// Unstuff it
-		if ((bytesRead = unstuff_information_frame(ll->frame, ll->frameSize)) < 0)
+		if ((ll->frame = unstuff_information_frame(ll->frame, &ll->frameSize)) < 0)
 			return 0;
 
-			// printf("Size after destuffing: %d\n", bytesRead);
+			// printf("Size after destuffing: %d\n", ll->frameSize);
 
 		#ifdef DEBUG
 			printf("\n\tAFTER DESTUFFING\n\n");
@@ -155,13 +159,13 @@ int llread(int fd, char *buffer)
 		int controlByte = ll->frame[2] == 0 ? 0 : 1;
 
 		// Get the bbc2 field
-		int bcc2 = ll->frame[bytesRead - 2];
+		int bcc2 = ll->frame[ll->frameSize - 2];
 
-		// printf("bbc2 is %d\n", ll->frame[bytesRead - 2]);
-		// printf("get_bcc2 is %d\n", get_bcc2(&ll->frame[4], bytesRead - 6));
+		// printf("bbc2 is %d\n", ll->frame[ll->frameSize - 2]);
+		// printf("get_bcc2 is %d\n", get_bcc2(&ll->frame[4], ll->frameSize - 6));
 
 		// Check if bcc2 is correct
-		if (bcc2 == get_bcc2(&ll->frame[4], bytesRead - 6))
+		if (bcc2 == get_bcc2(&ll->frame[4], ll->frameSize - 6))
 		{
 			if (controlByte != ll->sequenceNumber)
 			{
@@ -172,7 +176,7 @@ int llread(int fd, char *buffer)
 			else
 			{
 				bufferFull = true;
-				memcpy(buffer, ll->frame + 4, bytesRead);
+				memcpy(buffer, ll->frame + 4, ll->frameSize);
 
 				responseByte = (controlByte == 1) ? RR00 : RR01;
 				ll->sequenceNumber = (controlByte == 1) ? 0 : 1;
@@ -199,7 +203,7 @@ int llread(int fd, char *buffer)
 	if (!send_supervision_frame(responseByte))
 		return 0;
 
-	return (bytesRead - 6);
+	return (ll->frameSize - 6);
 }
 
 int llopen_transmitter()

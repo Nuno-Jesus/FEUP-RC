@@ -67,24 +67,24 @@ unsigned char get_bcc2(unsigned char *data, unsigned long size)
 	return res;
 }
 
-int stuff_information_frame(unsigned char *frame, int size)
+unsigned char* stuff_information_frame(unsigned char *frame, int *size)
 {
 	if (!frame || !size)
 		return 0;
 
 	unsigned char *buf; // 4 bytes for the header + size of the data packet + 2 bytes for the tail
-	int newSize = size;
+	int newSize = *size;
 
-	if (!(buf = (unsigned char *)malloc(size * sizeof(unsigned char))))
+	if (!(buf = (unsigned char *)malloc(*size * sizeof(unsigned char))))
 		return 0;
 
-	for (int i = 0, j = 0; i < size; i++)
+	for (int i = 0, j = 0; i < *size; i++)
 	{
-		if (frame[i] == FLAG)
+		if (frame[i] == FLAG && i != 0 && i != *size - 1)
 		{
 			buf = realloc(buf, ++newSize);
 			buf[j] = ESCAPE;
-			buf[j + 1] = FLAG_STUFFED;
+			buf[j+1] = FLAG_STUFFED;
 			j += 2;
 		}
 		else if (frame[i] == ESCAPE)
@@ -95,54 +95,51 @@ int stuff_information_frame(unsigned char *frame, int size)
 			j += 2;
 		}
 		else
-		{
-			buf[j] = frame[i];
-			j++;
-		}
+			buf[j++] = frame[i];
 	}
+	
+	*size = newSize;
+	free(frame);
 
-	frame = realloc(frame, newSize);
-	memcpy(frame, buf, newSize);
-	free(buf);
-
-	return newSize;
+	return buf;
 }
 
-int unstuff_information_frame(unsigned char *frame, int size)
+unsigned char *unstuff_information_frame(unsigned char *frame, int *size)
 {
 	unsigned char *buf;
-	int newSize = size;
+	int newSize = *size;
+	int foundEscape = FALSE;
 
-	if (!(buf = (unsigned char *)malloc(size)))
+	if (!(buf = (unsigned char *)malloc(*size)))
 		return 0;
 
-	for (int j = 0, i = 0; i < size; j++)
+	for (int j = 0, i = 0; i < *size; i++)
 	{
-		if (frame[i] == ESCAPE)
+		if(frame[i] == ESCAPE)
 		{
-			buf = realloc(buf, --newSize);
-			if (i + 1 < size && frame[i + 1] == ESCAPE_STUFFED)
-			{
-				buf[j] = ESCAPE;
-				i += 2;
-			}
-			else if (i + 1 < size && frame[i + 1] == FLAG_STUFFED)
-			{
-				buf[i] = FLAG;
-				i += 2;
-			}
-			i++;
+			if(!(buf = realloc(buf, --newSize)))
+				return NULL;
+			foundEscape = TRUE;
+		}
+		else if (foundEscape && frame[i] == ESCAPE_STUFFED)
+		{
+			buf[j++] = ESCAPE;
+			foundEscape = FALSE;
+		}
+		else if (foundEscape && frame[i] == FLAG_STUFFED)
+		{
+			buf[j++] = FLAG;
+			foundEscape = FALSE;
 		}
 		else
 		{
-			buf[j] = frame[i];
-			i++;
+			buf[j++] = frame[i];
+			foundEscape = FALSE;
 		}
 	}
 
-	frame = realloc(frame, newSize);
-	memcpy(frame, buf, newSize);
-	free(buf);
+	*size = newSize;
+	free(frame);
 
-	return newSize;
+	return buf;
 }

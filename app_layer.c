@@ -211,11 +211,6 @@ unsigned char* assemble_data_packet(int *packetSize, unsigned char* data, int da
 	res[3] = dataSize % 256;
 	memcpy(res + 4, data, dataSize);
 
-	#ifdef DEBUG
-		printf("Packet size: %d\n", *packetSize);
-		print_frame(res, *packetSize);
-	#endif	
-
 	return res;
 }
 

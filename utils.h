@@ -21,7 +21,7 @@ unsigned char get_bcc2(unsigned char *, unsigned long);
  * @param size Size of the data packet to process
  * @return Size of the frame after suffering byte stuffing
  */
-int stuff_information_frame(unsigned char *, int);
+unsigned char* stuff_information_frame(unsigned char *, int *);
 
 /**
  * @brief Applies byte de-stuffing to the data packet of the frame
@@ -29,6 +29,6 @@ int stuff_information_frame(unsigned char *, int);
  * @param size Size of the data packet to process
  * @return Size of the frame after suffering byte de-stuffing
  */
-int unstuff_information_frame(unsigned char *, int);
+unsigned char* unstuff_information_frame(unsigned char *, int *);
 
 #endif
