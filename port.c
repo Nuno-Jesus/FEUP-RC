@@ -111,18 +111,18 @@ int receive_supervision_frame(Device device, FrameControl field)
 
 		if (!read(port->fd, &machine->byte, 1))
 			return 0;
-
+/* 
 		#ifdef DEBUG
 			printf("---------------------------------------\n");
 			printf("Current byte: %02X\n", machine->byte);
 			printf("State before parsing current byte: %d\n", machine->state);
-		#endif
+		#endif */
 
 		state_machine_multiplexer(machine);
 
-		#ifdef DEBUG
+	/* 	#ifdef DEBUG
 			printf("State after parsing current byte: %d\n", machine->state);
-		#endif
+		#endif */
 	}
 
 	delete_state_machine(machine);
@@ -147,17 +147,17 @@ int receive_information_frame(Device device)
 
 	while (machine->state != END)
 	{
-		#ifdef DEBUG
+		/* #ifdef DEBUG
 			printf("Machine Byte: 0x%02X\n", machine->byte);
 			printf("Machine State: %d\n", machine->state);
-		#endif
+		#endif */
 
 		if (!read(port->fd, &machine->byte, 1))
 			return 0;
 
-		#ifdef DEBUG
+		/* #ifdef DEBUG
 			printf("Machine State After: %d\n", machine->state);
-		#endif
+		#endif */
 
 		state_machine_multiplexer(machine);
 

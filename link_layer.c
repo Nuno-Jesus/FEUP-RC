@@ -66,11 +66,11 @@ unsigned char *assemble_information_frame(unsigned char *buffer, int *length)
 	frame[4 + *length] = get_bcc2(frame + 4, *length);
 	frame[4 + *length + 1] = FLAG;
 
-	#ifdef DEBUG
+	/* #ifdef DEBUG
 		printf("Assembled frame length: %d\n", size);
 		print_frame(frame, size);
 	#endif
-
+ */
 	if(!(res = stuff_information_frame(frame, &size)))
 		return NULL;
 
@@ -139,10 +139,10 @@ int llread(int fd, char *buffer)
 		if (!receive_information_frame(RECEIVER))
 			return 0;
 
-		#ifdef DEBUG
+		/* #ifdef DEBUG
 			printf("\n\tBEFORE DESTUFFING\n\n");
 			print_frame(ll->frame, ll->frameSize);
-		#endif
+		#endif */
 
 		// Unstuff it
 		if ((ll->frame = unstuff_information_frame(ll->frame, &ll->frameSize)) < 0)
@@ -270,25 +270,19 @@ int llopen_receiver()
 
 int llclose_receiver()
 {
-	if (!receive_supervision_frame(RECEIVER, DISC))
-		return 0;
-
-	start_alarm(a);
-
 	do
 	{
-		printf("Received DISC frame.\n");
-		if (send_supervision_frame(DISC))
+		if (receive_supervision_frame(RECEIVER, DISC))
 		{
-			printf("Sending DISC frame.\n");
-			stop_alarm();
-			break;
+			if (send_supervision_frame(DISC))
+			{
+				printf("Sending DISC frame.\n");
+				stop_alarm();
+				break;
+			}
+			else 
+				a->counter++;
 		}
-		else if (!receive_supervision_frame(RECEIVER, DISC))
-			return 0;
-		// In case of a timeout when reading the UA frame, a new alarm is setted up
-		// and a->counter is incremented. It pretty much works like calling the handler
-		// at the end of a send/receive pair
 	} while (a->counter < MAXTRANSMISSIONS);
 
 	return 1;
@@ -296,29 +290,29 @@ int llclose_receiver()
 
 int llclose_transmitter()
 {
-	if (!send_supervision_frame(DISC))
-		return 0;
-
 	start_alarm(a);
 
 	do
 	{
-		printf("Sending DISC frame.\n");
-		if (receive_supervision_frame(TRANSMITTER, DISC))
-		{
-			printf("Received DISC frame.\n");
-			stop_alarm();
-			break;
+		if (!a->isActive)
+		{	
+			a->isActive = TRUE;
+			if (send_supervision_frame(DISC))
+			{
+				printf("Sending DISC frame.\n");
+				if (receive_supervision_frame(TRANSMITTER, DISC))
+				{
+					printf("Received DISC frame.\n");
+					send_supervision_frame(UA);
+					stop_alarm();
+					break;
+				}
+			}
 		}
-		else if (!send_supervision_frame(DISC))
-			return 0;
-		// In case of a timeout when reading the UA frame, a new alarm is setted up
-		// and a->counter is incremented. It pretty much works like calling the handler
-		// at the end of a send/receive pair
+		
 	} while (a->counter < MAXTRANSMISSIONS);
 
-	if (!send_supervision_frame(UA))
-		return 0;
+	
 
 	printf("Sending UA frame.\n");
 	return 1;

@@ -132,9 +132,6 @@ int receive_file(char *portname)
 			if (!resolve_data_packet(buf, &seqNum, data))
 				return 0;
 
-			if (seqNum != expSeqNum)
-				return 0;
-
 			expSeqNum = (expSeqNum == 0) ? 1 : 0;
 
 			// Real size of data is the packet read minus 4 (C, N, L1 & L2)
@@ -142,7 +139,7 @@ int receive_file(char *portname)
 
 			//write to the file
 			if(((int)fwrite(data, sizeof(unsigned char), bytesRead, filePtr) < bytesRead))
-				return -1;
+				return 0;
 		}
 
 		else if (buf[0] == END_PACKET)
@@ -156,22 +153,33 @@ int receive_file(char *portname)
 	/* Imprimir as estatisticas*/
 
 	// check if file size matches
+
+	/* 
 	if (filesize != (int)get_file_size("received_pinguim.gif"))
+	{
+		printf("Ime here\n");
 		return 0;
+	} */
 
 	int filesizeAtEnd;
 	char filenameAtEnd[MAX_FILENAME_SIZE];
 
 	// Parse the last packet received
 	if (!resolve_control_packet(buf, &filesizeAtEnd, filenameAtEnd))
+	{
+		//printf("Ime here 2\n");
 		return 0;
+	}
 
 	// check if info on start packet matches info on end packet
-	if (filesizeAtEnd != filesize || filenameAtEnd != filename)
-		return 0;
+
+	/* if (filesizeAtEnd != filesize || filenameAtEnd != filename)
+		return 0; */
 
 	if (!llclose(app->fd, app->device))
 		return 0;
+
+	return 1;
 }
 
 unsigned char* assemble_control_packet(int *packetSize, PacketControl control, char *filename, int filesize)
