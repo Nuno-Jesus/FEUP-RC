@@ -20,10 +20,9 @@ unsigned char *assemble_control_packet(int *packetSize, PacketControl control, c
 	memcpy(res + 3, filesizeStr, len);
 
 	res[3 + len] = FILENAME;
-	res[3 + len + 1] = (unsigned char)strlen(filename) + 1;
+	res[3 + len + 1] = (unsigned char)strlen(filename);
 	memcpy(res + (3 + len + 2), filename, strlen(filename));
 
-	res[3 + len + 1 + strlen(filename) + 1] = '\0';
 
 	return res;
 }
@@ -242,32 +241,35 @@ int receive_file(char *portname)
 	if (!resolve_control_packet(buf, &filesizeAtEnd, (char *)filenameAtEnd))
 		return 0;
 
-	printf("File info at beginning\n");
+	/* printf("File info at beginning\n");
 	printf("\t");
-	for (int i = 0; i < strlen(filename); i++){
+	for (int i = 0; i < strlen(filename) - 1; i++){
 		printf("%c", filename[i]);
 	}
 	printf("\n");
 	printf("\tFile size: %d\n", filesize);
 
+	printf("STRLEN(FILENAME) %ld\n", strlen(filename));
+	printf("STRLEN(FILENAMEATEND) %ld\n", strlen(filenameAtEnd));
+
 	printf("File info at end\n");
 	printf("\t");
-	for (int i = 0; i < strlen(filenameAtEnd); i++){
+	for (int i = 0; i < strlen(filenameAtEnd) - 1; i++){
 		printf("%c", filenameAtEnd[i]);
 	}
 	printf("\n");
-	printf("\tFile size: %d\n", filesizeAtEnd);
+	printf("\tFile size: %d\n", filesizeAtEnd); */
 
 	// check if info on start packet matches info on end packet
-	/* if (filesizeAtEnd != filesize || strcmp(filename, filenameAtEnd))
-		return 0; */
-
-	// check the file content
-	if (!check_file_diff("pinguim.gif", "received_pinguim.gif"))
+	if (filesizeAtEnd != filesize || memcmp(filename, filenameAtEnd, strlen(filename)))
 		return 0;
 
 	// Close the port
 	if (!llclose(app->fd, app->device))
+		return 0;
+
+	// check the file content
+	if (!check_file_diff("pinguim.gif", "received_pinguim.gif"))
 		return 0;
 
 	return 1;
