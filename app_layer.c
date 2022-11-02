@@ -16,9 +16,9 @@ int resolve_data_packet(unsigned char *packet, int *sequence_number, unsigned ch
 	int size = 256 * packet[2] + packet[3];
 
 	// Data field of the packet (size is K)
-	for (int i = 4; i < size; i++)
+	for (int i = 0; i < size; i++)
 	{
-		packet_data[i - 4] = packet[size];
+		packet_data[i] = packet[i + 4];
 	}
 
 	return 1;
@@ -29,7 +29,7 @@ int resolve_control_packet(unsigned char *packet, int *filesize, char *filename)
 	*filesize = 0;
 
 	// Check the control field
-	if (packet[0] != START_PACKET && packet[1] != END_PACKET)
+	if (packet[0] != START_PACKET && packet[0] != END_PACKET)
 		return 0;
 
 	int t1, t2, l1, l2;
@@ -46,7 +46,6 @@ int resolve_control_packet(unsigned char *packet, int *filesize, char *filename)
 		// Parse the file size
 		for (int i = 0; i < l1; i++)
 			*filesize = packet[i + 3] + *filesize * 256;
-
 	}
 	else
 		return 0;
@@ -95,7 +94,8 @@ int receive_file(char *portname)
 	gettimeofday(&start, NULL);
 
 	// Read from the serial port using llread()
-	if ((bytesRead = llread(app->fd, (char *)buf)) < 0)
+	bytesRead = llread(app->fd, (char *)buf);
+	if (bytesRead < 0)
 		return 0;
 
 	bitsRead += bytesRead * 8;
@@ -118,12 +118,16 @@ int receive_file(char *portname)
 	int expSeqNum = 0, seqNum;
 
 	// Read data packets from transmitter
-	while(1)
+	while (1)
 	{
-		// Read from the serial port using llread()
-		if ((bytesRead = llread(app->fd, (char *)buf) < 0))
+		bytesRead = llread(app->fd, (char *)buf);
+		if (bytesRead < 0)
 			return 0;
 
+#ifdef DEBUG
+		for (int i = 0; i < bytesRead; i++)
+			printf("Byte %d -> 0x%02x\n", i, buf[i]);
+#endif
 		bitsRead += bytesRead * 8;
 
 		if (buf[0] == DATA_PACKET)
@@ -132,13 +136,18 @@ int receive_file(char *portname)
 			if (!resolve_data_packet(buf, &seqNum, data))
 				return 0;
 
+#ifdef DEBUG
+			for (int i = 0; i < bytesRead; i++)
+				printf("Data %d -> 0x%02x\n", i, data[i]);
+#endif
+
 			expSeqNum = (expSeqNum == 0) ? 1 : 0;
 
 			// Real size of data is the packet read minus 4 (C, N, L1 & L2)
 			bytesRead -= 4;
 
-			//write to the file
-			if(((int)fwrite(data, sizeof(unsigned char), bytesRead, filePtr) < bytesRead))
+			// write to the file
+			if (((int)fwrite(data, 1, bytesRead, filePtr) < bytesRead))
 				return 0;
 		}
 
@@ -148,28 +157,22 @@ int receive_file(char *portname)
 
 	gettimeofday(&end, NULL);
 
-	//float time_taken = end.tv_sec - start.tv_sec;
+	float time_taken = end.tv_sec - start.tv_sec;
+	time_taken = (time_taken + (end.tv_usec - start.tv_usec)) * 1e-6;
 
 	/* Imprimir as estatisticas*/
 
 	// check if file size matches
 
-	/* 
-	if (filesize != (int)get_file_size("received_pinguim.gif"))
-	{
-		printf("Ime here\n");
-		return 0;
-	} */
+	/* if (filesize != (int)get_file_size("received_pinguim.gif"))
+		return 0; */
 
 	int filesizeAtEnd;
 	char filenameAtEnd[MAX_FILENAME_SIZE];
 
 	// Parse the last packet received
 	if (!resolve_control_packet(buf, &filesizeAtEnd, filenameAtEnd))
-	{
-		//printf("Ime here 2\n");
 		return 0;
-	}
 
 	// check if info on start packet matches info on end packet
 
@@ -182,7 +185,7 @@ int receive_file(char *portname)
 	return 1;
 }
 
-unsigned char* assemble_control_packet(int *packetSize, PacketControl control, char *filename, int filesize)
+unsigned char *assemble_control_packet(int *packetSize, PacketControl control, char *filename, int filesize)
 {
 	int len;
 	unsigned char *res;
@@ -190,27 +193,27 @@ unsigned char* assemble_control_packet(int *packetSize, PacketControl control, c
 
 	len = tobytes(filesize, filesizeStr) - 1;
 	*packetSize = 5 + strlen(filename) + len;
-	if(!(res = (unsigned char *) malloc(*packetSize * sizeof(char))))
+	if (!(res = (unsigned char *)malloc(*packetSize * sizeof(char))))
 		return 0;
 
 	res[0] = control;
 	res[1] = FILESIZE;
-	res[2] = (unsigned char) len;
+	res[2] = (unsigned char)len;
 	memcpy(res + 3, filesizeStr, len);
 
 	res[3 + len] = FILENAME;
-	res[3 + len + 1] = (unsigned char) strlen(filename);
+	res[3 + len + 1] = (unsigned char)strlen(filename);
 	memcpy(res + (3 + len + 2), filename, strlen(filename));
 
 	return res;
 }
 
-unsigned char* assemble_data_packet(int *packetSize, unsigned char* data, int dataSize, int sequenceNumber)
+unsigned char *assemble_data_packet(int *packetSize, unsigned char *data, int dataSize, int sequenceNumber)
 {
 	unsigned char *res;
 
 	*packetSize = 4 + dataSize;
-	if(!(res = (unsigned char *)malloc(*packetSize * sizeof(char))))
+	if (!(res = (unsigned char *)malloc(*packetSize * sizeof(char))))
 		return 0;
 
 	res[0] = DATA_PACKET;
@@ -243,10 +246,10 @@ int send_file(char *portname, char *filename)
 	if (!(packet = assemble_control_packet(&packetSize, START_PACKET, filename, fileSize)))
 		return 0;
 
-	#ifdef DEBUG
-		printf("\n\tAssembled Control Packet\n\n");
-		print_frame(packet, packetSize);
-	#endif
+#ifdef DEBUG
+	printf("\n\tAssembled Control Packet\n\n");
+	print_frame(packet, packetSize);
+#endif
 
 	if (llwrite(app->fd, packet, packetSize) == -1)
 	{
@@ -257,14 +260,14 @@ int send_file(char *portname, char *filename)
 	free(packet);
 
 	int seqNum = 0;
-	for(int i = 0; i < fileSize; i = i + MAX_DATA)
+	for (int i = 0; i < fileSize; i = i + MAX_DATA)
 	{
 		if (i + MAX_DATA > fileSize)
 			packetSize = fileSize % MAX_DATA;
 		else
 			packetSize = MAX_DATA;
 
-		if (!(packet = assemble_data_packet(&packetSize,(unsigned char *) file + i, packetSize, seqNum)))
+		if (!(packet = assemble_data_packet(&packetSize, (unsigned char *)file + i, packetSize, seqNum)))
 			return 0;
 
 		if (llwrite(app->fd, packet, packetSize) == -1)
@@ -290,8 +293,8 @@ int send_file(char *portname, char *filename)
 
 AppLayer *new_app_layer(Device device)
 {
-	AppLayer* app = (AppLayer *)malloc(sizeof(AppLayer));
-	if(!app)
+	AppLayer *app = (AppLayer *)malloc(sizeof(AppLayer));
+	if (!app)
 		return NULL;
 
 	app->fd = 0;

@@ -71,13 +71,13 @@ unsigned char *assemble_information_frame(unsigned char *buffer, int *length)
 		print_frame(frame, size);
 	#endif
  */
-	if(!(res = stuff_information_frame(frame, &size)))
+	if (!(res = stuff_information_frame(frame, &size)))
 		return NULL;
 
-	#ifdef DEBUG
-		printf("Stuffed frame length: %d\n", size);
-		print_frame(res, size);
-	#endif
+#ifdef DEBUG
+	printf("Stuffed frame length: %d\n", size);
+	print_frame(res, size);
+#endif
 
 	*length = size;
 	return res;
@@ -93,13 +93,13 @@ int llwrite(int fd, char *buffer, int length)
 		return -1;
 
 	ll->frameSize = newLength;
-	
+
 	start_alarm(a);
 	get_possible_responses(responses);
 
 	if (!send_information_frame(ll->frame, ll->frameSize))
 		return -1;
-	
+
 	do
 	{
 		if (!a->isActive)
@@ -107,7 +107,7 @@ int llwrite(int fd, char *buffer, int length)
 			a->isActive = TRUE;
 			printf("Sending data frame (size = %d).\n", ll->frameSize);
 			if (receive_supervision_frame(TRANSMITTER, responses[0]))
-			{	
+			{
 				printf("RR %d received.\n", responses[0]);
 				stop_alarm();
 				break;
@@ -118,7 +118,7 @@ int llwrite(int fd, char *buffer, int length)
 				return -1;
 		}
 
-		if(a->counter >= MAXTRANSMISSIONS)
+		if (a->counter >= MAXTRANSMISSIONS)
 			return -1;
 	} while (1);
 
@@ -150,10 +150,10 @@ int llread(int fd, char *buffer)
 
 			// printf("Size after destuffing: %d\n", ll->frameSize);
 
-		#ifdef DEBUG
-			printf("\n\tAFTER DESTUFFING\n\n");
-			print_frame(ll->frame, ll->frameSize);
-		#endif
+#ifdef DEBUG
+		printf("\n\tAFTER DESTUFFING\n\n");
+		print_frame(ll->frame, ll->frameSize);
+#endif
 
 		// Parse the control byte (Sequence Number)
 		int controlByte = ll->frame[2] == 0 ? 0 : 1;
@@ -165,7 +165,11 @@ int llread(int fd, char *buffer)
 		// printf("get_bcc2 is %d\n", get_bcc2(&ll->frame[4], ll->frameSize - 6));
 
 		// Check if bcc2 is correct
+
+		#ifdef DEBUG
 		printf("bcc vs get_bcc2: 0x%02X, 0x%02X\n", bcc2, get_bcc2(&ll->frame[4], ll->frameSize - 6));
+		#endif
+
 		if (bcc2 == get_bcc2(&ll->frame[4], ll->frameSize - 6))
 		{
 			if (controlByte != ll->sequenceNumber)
@@ -176,7 +180,7 @@ int llread(int fd, char *buffer)
 
 			else
 			{
-				printf("BCC is correct\n");
+				//printf("BCC is correct\n");
 				bufferFull = true;
 				memcpy(buffer, ll->frame + 4, ll->frameSize);
 
@@ -207,6 +211,7 @@ int llread(int fd, char *buffer)
 		free(ll->frame);
 		ll->frame = NULL;
 	}
+
 	bytesRead = ll->frameSize;
 	ll->frameSize = 0;
 
@@ -280,7 +285,7 @@ int llclose_receiver()
 				stop_alarm();
 				break;
 			}
-			else 
+			else
 				a->counter++;
 		}
 	} while (a->counter < MAXTRANSMISSIONS);
@@ -295,7 +300,7 @@ int llclose_transmitter()
 	do
 	{
 		if (!a->isActive)
-		{	
+		{
 			a->isActive = TRUE;
 			if (send_supervision_frame(DISC))
 			{
@@ -309,10 +314,8 @@ int llclose_transmitter()
 				}
 			}
 		}
-		
-	} while (a->counter < MAXTRANSMISSIONS);
 
-	
+	} while (a->counter < MAXTRANSMISSIONS);
 
 	printf("Sending UA frame.\n");
 	return 1;
