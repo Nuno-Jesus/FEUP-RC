@@ -182,7 +182,7 @@ int llread(int fd, char *buffer)
 			{
 				//printf("BCC is correct\n");
 				bufferFull = true;
-				memcpy(buffer, ll->frame + 4, ll->frameSize);
+				memcpy(buffer, ll->frame + 4, ll->frameSize - 2);
 
 				responseByte = (controlByte == 1) ? RR00 : RR01;
 				ll->sequenceNumber = (controlByte == 1) ? 0 : 1;

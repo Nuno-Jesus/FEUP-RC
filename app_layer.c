@@ -15,11 +15,7 @@ int resolve_data_packet(unsigned char *packet, int *sequence_number, unsigned ch
 	the data field K = 256 * L2 * L1 */
 	int size = 256 * packet[2] + packet[3];
 
-	// Data field of the packet (size is K)
-	for (int i = 0; i < size; i++)
-	{
-		packet_data[i] = packet[i + 4];
-	}
+	memcpy(packet_data, &packet[4], size);
 
 	return 1;
 }
@@ -88,7 +84,8 @@ int receive_file(char *portname)
 	int filesize, bytesRead, bitsRead = 0;
 	char filename[MAX_FILENAME_SIZE];
 
-	unsigned char buf[MAX_DATA], data[MAX_DATA];
+	unsigned char buf[MAX_PACKET_SIZE];
+	unsigned char data[MAX_DATA_SIZE];
 
 	// start counting time
 	gettimeofday(&start, NULL);
@@ -118,6 +115,7 @@ int receive_file(char *portname)
 	int expSeqNum = 0, seqNum;
 
 	// Read data packets from transmitter
+	int i = 0;
 	while (1)
 	{
 		bytesRead = llread(app->fd, (char *)buf);
@@ -136,23 +134,34 @@ int receive_file(char *portname)
 			if (!resolve_data_packet(buf, &seqNum, data))
 				return 0;
 
+
 #ifdef DEBUG
-			for (int i = 0; i < bytesRead; i++)
+			for (int i = 0; i < bytesRead - 4; i++)
 				printf("Data %d -> 0x%02x\n", i, data[i]);
 #endif
 
-			expSeqNum = (expSeqNum == 0) ? 1 : 0;
+			// Check if the sequence number match
+			if (expSeqNum != seqNum)
+				return 0;
+
+			// Update the expected sequence number
+			expSeqNum = (expSeqNum + 1) % 256;
 
 			// Real size of data is the packet read minus 4 (C, N, L1 & L2)
 			bytesRead -= 4;
 
+			//printf("I will write %d bytes to the file\n", bytesRead);
+
 			// write to the file
-			if (((int)fwrite(data, 1, bytesRead, filePtr) < bytesRead))
+			if (((int)fwrite(data, 1, bytesRead, filePtr) < bytesRead)){
 				return 0;
+			}
 		}
 
 		else if (buf[0] == END_PACKET)
 			break;
+
+		i++;
 	}
 
 	gettimeofday(&end, NULL);
@@ -167,6 +176,8 @@ int receive_file(char *portname)
 	/* if (filesize != (int)get_file_size("received_pinguim.gif"))
 		return 0; */
 
+	// printf("Received file size :%lu\n", get_file_size("received_pinguim.gif"));
+
 	int filesizeAtEnd;
 	char filenameAtEnd[MAX_FILENAME_SIZE];
 
@@ -174,10 +185,18 @@ int receive_file(char *portname)
 	if (!resolve_control_packet(buf, &filesizeAtEnd, filenameAtEnd))
 		return 0;
 
+	/* printf("File info at beginning\n");
+	printf("\tFilename: %s\n", filename);
+	printf("\tFile size: %d\n", filesize);
+
+	printf("File info at end\n");
+	printf("\tFilename: %s\n", filenameAtEnd);
+	printf("\tFile size: %d\n", filesizeAtEnd); */
+
 	// check if info on start packet matches info on end packet
 
-	/* if (filesizeAtEnd != filesize || filenameAtEnd != filename)
-		return 0; */
+	if (filesizeAtEnd != filesize || strcmp(filename, filenameAtEnd))
+		return 0;
 
 	if (!llclose(app->fd, app->device))
 		return 0;
@@ -260,12 +279,12 @@ int send_file(char *portname, char *filename)
 	free(packet);
 
 	int seqNum = 0;
-	for (int i = 0; i < fileSize; i = i + MAX_DATA)
+	for (int i = 0; i < fileSize; i = i + MAX_DATA_SIZE)
 	{
-		if (i + MAX_DATA > fileSize)
-			packetSize = fileSize % MAX_DATA;
+		if (i + MAX_DATA_SIZE > fileSize)
+			packetSize = fileSize % MAX_DATA_SIZE;
 		else
-			packetSize = MAX_DATA;
+			packetSize = MAX_DATA_SIZE;
 
 		if (!(packet = assemble_data_packet(&packetSize, (unsigned char *)file + i, packetSize, seqNum)))
 			return 0;

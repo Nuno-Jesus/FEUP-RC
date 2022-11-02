@@ -96,7 +96,7 @@ typedef enum device_t
 #define CONTROL_DATA_FIELD_2 0x40
 
 #define MAX_FILENAME_SIZE 255
-#define MAX_DATA 256
-#define MAX_DATA_PACKET (MAX_DATA + 4) // 4 extra bytes for the packet header
+#define MAX_DATA_SIZE 1024	/** Max size of the data field in a data packet */
+#define MAX_PACKET_SIZE (MAX_DATA_SIZE + 4)	/** Max size of a data packet is the size of the data itself plus 4 bytes for the header */
 
 #endif
