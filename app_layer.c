@@ -1,6 +1,47 @@
 #include "app_layer.h"
 
+
 AppLayer *app;
+
+unsigned char *assemble_control_packet(int *packetSize, PacketControl control, char *filename, int filesize)
+{
+	int len;
+	unsigned char *res;
+	unsigned char *filesizeStr = (unsigned char *)malloc(0);
+
+	len = tobytes(filesize, filesizeStr) - 1;
+	*packetSize = 5 + strlen(filename) + len;
+	if (!(res = (unsigned char *)malloc(*packetSize * sizeof(char))))
+		return 0;
+
+	res[0] = control;
+	res[1] = FILESIZE;
+	res[2] = (unsigned char)len;
+	memcpy(res + 3, filesizeStr, len);
+
+	res[3 + len] = FILENAME;
+	res[3 + len + 1] = (unsigned char)strlen(filename);
+	memcpy(res + (3 + len + 2), filename, strlen(filename));
+
+	return res;
+}
+
+unsigned char *assemble_data_packet(int *packetSize, unsigned char *data, int dataSize, int sequenceNumber)
+{
+	unsigned char *res;
+
+	*packetSize = 4 + dataSize;
+	if (!(res = (unsigned char *)malloc(*packetSize * sizeof(char))))
+		return 0;
+
+	res[0] = DATA_PACKET;
+	res[1] = sequenceNumber;
+	res[2] = dataSize / 256;
+	res[3] = dataSize % 256;
+	memcpy(res + 4, data, dataSize);
+
+	return res;
+}
 
 int resolve_data_packet(unsigned char *packet, int *sequence_number, unsigned char *packet_data)
 {
@@ -16,6 +57,8 @@ int resolve_data_packet(unsigned char *packet, int *sequence_number, unsigned ch
 	int size = 256 * packet[2] + packet[3];
 
 	memcpy(packet_data, &packet[4], size);
+
+	printf("Received data packet\n");
 
 	return 1;
 }
@@ -78,8 +121,6 @@ int receive_file(char *portname)
 	if ((app->fd = llopen(portname, app->device)) == -1)
 		return 0;
 
-	// Count the time
-	struct timeval start, end;
 
 	int filesize, bytesRead, bitsRead = 0;
 	char filename[MAX_FILENAME_SIZE];
@@ -87,8 +128,10 @@ int receive_file(char *portname)
 	unsigned char buf[MAX_PACKET_SIZE];
 	unsigned char data[MAX_DATA_SIZE];
 
-	// start counting time
-	gettimeofday(&start, NULL);
+	// Start measuring time
+    struct timeval t1, t2;
+    double timeTaken;
+	gettimeofday(&t1, NULL);
 
 	// Read from the serial port using llread()
 	bytesRead = llread(app->fd, (char *)buf);
@@ -134,7 +177,6 @@ int receive_file(char *portname)
 			if (!resolve_data_packet(buf, &seqNum, data))
 				return 0;
 
-
 #ifdef DEBUG
 			for (int i = 0; i < bytesRead - 4; i++)
 				printf("Data %d -> 0x%02x\n", i, data[i]);
@@ -150,10 +192,11 @@ int receive_file(char *portname)
 			// Real size of data is the packet read minus 4 (C, N, L1 & L2)
 			bytesRead -= 4;
 
-			//printf("I will write %d bytes to the file\n", bytesRead);
+			// printf("I will write %d bytes to the file\n", bytesRead);
 
 			// write to the file
-			if (((int)fwrite(data, 1, bytesRead, filePtr) < bytesRead)){
+			if (((int)fwrite(data, 1, bytesRead, filePtr) < bytesRead))
+			{
 				return 0;
 			}
 		}
@@ -164,24 +207,32 @@ int receive_file(char *portname)
 		i++;
 	}
 
-	gettimeofday(&end, NULL);
+	gettimeofday(&t2, NULL);
 
-	float time_taken = end.tv_sec - start.tv_sec;
-	time_taken = (time_taken + (end.tv_usec - start.tv_usec)) * 1e-6;
+	// compute and print the elapsed time in millisec
+    timeTaken = (t2.tv_sec - t1.tv_sec);
+    timeTaken += (t2.tv_usec - t1.tv_usec) / 1e6;   // us to s
 
-	/* Imprimir as estatisticas*/
+	printf("\n\t\t **** STATISTICS **** \n");
+	printf("\t\tNumber of bits read = %d\n", bitsRead);
+	printf("\t\tTime it took to send the file =  %fs\n", timeTaken);
 
-	// check if file size matches
+	double R = bitsRead/timeTaken;
+	double baudRate = 180000.0;
+	double S = R / baudRate;
 
+	printf("\t\tBaudrate = %lf\n", R);
+	printf("\t\tS = %lf\n\n", S);
+
+
+	// check if file sizes match
 	/* if (filesize != (int)get_file_size("received_pinguim.gif"))
 		return 0; */
-
-	// printf("Received file size :%lu\n", get_file_size("received_pinguim.gif"));
 
 	int filesizeAtEnd;
 	char filenameAtEnd[MAX_FILENAME_SIZE];
 
-	// Parse the last packet received
+	// Parse the last packet received (end packet)
 	if (!resolve_control_packet(buf, &filesizeAtEnd, filenameAtEnd))
 		return 0;
 
@@ -194,54 +245,14 @@ int receive_file(char *portname)
 	printf("\tFile size: %d\n", filesizeAtEnd); */
 
 	// check if info on start packet matches info on end packet
+	/* if (filesizeAtEnd != filesize || strcmp(filename, filenameAtEnd))
+		return 0; */
 
-	if (filesizeAtEnd != filesize || strcmp(filename, filenameAtEnd))
-		return 0;
-
+	// Close the port
 	if (!llclose(app->fd, app->device))
 		return 0;
 
 	return 1;
-}
-
-unsigned char *assemble_control_packet(int *packetSize, PacketControl control, char *filename, int filesize)
-{
-	int len;
-	unsigned char *res;
-	unsigned char *filesizeStr = (unsigned char *)malloc(0);
-
-	len = tobytes(filesize, filesizeStr) - 1;
-	*packetSize = 5 + strlen(filename) + len;
-	if (!(res = (unsigned char *)malloc(*packetSize * sizeof(char))))
-		return 0;
-
-	res[0] = control;
-	res[1] = FILESIZE;
-	res[2] = (unsigned char)len;
-	memcpy(res + 3, filesizeStr, len);
-
-	res[3 + len] = FILENAME;
-	res[3 + len + 1] = (unsigned char)strlen(filename);
-	memcpy(res + (3 + len + 2), filename, strlen(filename));
-
-	return res;
-}
-
-unsigned char *assemble_data_packet(int *packetSize, unsigned char *data, int dataSize, int sequenceNumber)
-{
-	unsigned char *res;
-
-	*packetSize = 4 + dataSize;
-	if (!(res = (unsigned char *)malloc(*packetSize * sizeof(char))))
-		return 0;
-
-	res[0] = DATA_PACKET;
-	res[1] = sequenceNumber;
-	res[2] = dataSize / 256;
-	res[3] = dataSize % 256;
-	memcpy(res + 4, data, dataSize);
-
-	return res;
 }
 
 int send_file(char *portname, char *filename)
