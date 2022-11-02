@@ -20,8 +20,10 @@ unsigned char *assemble_control_packet(int *packetSize, PacketControl control, c
 	memcpy(res + 3, filesizeStr, len);
 
 	res[3 + len] = FILENAME;
-	res[3 + len + 1] = (unsigned char)strlen(filename);
+	res[3 + len + 1] = (unsigned char)strlen(filename) + 1;
 	memcpy(res + (3 + len + 2), filename, strlen(filename));
+
+	res[3 + len + 1 + strlen(filename) + 1] = '\0';
 
 	return res;
 }
@@ -103,11 +105,15 @@ int resolve_control_packet(unsigned char *packet, int *filesize, char *filename)
 		// L -> Check the length of the V field size
 		l2 = packet[l2Pos];
 
-		for (int i = 0; i < l2; i++)
+		for (int i = 0; i < l2; i++){
 			filename[i] = packet[v2Start + i];
+			//printf("Filename[%d] -> %c\n", i, filename[i]);
+		}
 	}
 	else
 		return 0;
+
+
 
 	printf("Received Control Packet\n");
 	return 1;
@@ -233,20 +239,32 @@ int receive_file(char *portname)
 	char filenameAtEnd[MAX_FILENAME_SIZE];
 
 	// Parse the last packet received (end packet)
-	if (!resolve_control_packet(buf, &filesizeAtEnd, filenameAtEnd))
+	if (!resolve_control_packet(buf, &filesizeAtEnd, (char *)filenameAtEnd))
 		return 0;
 
-	/* printf("File info at beginning\n");
-	printf("\tFilename: %s\n", filename);
+	printf("File info at beginning\n");
+	printf("\t");
+	for (int i = 0; i < strlen(filename); i++){
+		printf("%c", filename[i]);
+	}
+	printf("\n");
 	printf("\tFile size: %d\n", filesize);
 
 	printf("File info at end\n");
-	printf("\tFilename: %s\n", filenameAtEnd);
-	printf("\tFile size: %d\n", filesizeAtEnd); */
+	printf("\t");
+	for (int i = 0; i < strlen(filenameAtEnd); i++){
+		printf("%c", filenameAtEnd[i]);
+	}
+	printf("\n");
+	printf("\tFile size: %d\n", filesizeAtEnd);
 
 	// check if info on start packet matches info on end packet
 	/* if (filesizeAtEnd != filesize || strcmp(filename, filenameAtEnd))
 		return 0; */
+
+	// check the file content
+	if (!check_file_diff("pinguim.gif", "received_pinguim.gif"))
+		return 0;
 
 	// Close the port
 	if (!llclose(app->fd, app->device))
