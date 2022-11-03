@@ -59,8 +59,6 @@ int resolve_data_packet(unsigned char *packet, int *sequence_number, unsigned ch
 
 	memcpy(packet_data, &packet[4], size);
 
-	printf("Received data packet\n");
-
 	return 1;
 }
 
@@ -108,11 +106,10 @@ int resolve_control_packet(unsigned char *packet, int *filesize, char *filename)
 			filename[i] = packet[v2Start + i];
 			//printf("Filename[%d] -> %c\n", i, filename[i]);
 		}
+		filename[l2] = '\0';
 	}
 	else
 		return 0;
-
-
 
 	printf("Received Control Packet\n");
 	return 1;
@@ -170,10 +167,6 @@ int receive_file(char *portname)
 		if (bytesRead < 0)
 			return 0;
 
-#ifdef DEBUG
-		for (int i = 0; i < bytesRead; i++)
-			printf("Byte %d -> 0x%02x\n", i, buf[i]);
-#endif
 		bitsRead += bytesRead * 8;
 
 		if (buf[0] == DATA_PACKET)
@@ -181,11 +174,6 @@ int receive_file(char *portname)
 			// resolve the received data packet
 			if (!resolve_data_packet(buf, &seqNum, data))
 				return 0;
-
-#ifdef DEBUG
-			for (int i = 0; i < bytesRead - 4; i++)
-				printf("Data %d -> 0x%02x\n", i, data[i]);
-#endif
 
 			// Check if the sequence number match
 			if (expSeqNum != seqNum)
@@ -218,7 +206,7 @@ int receive_file(char *portname)
     timeTaken = (t2.tv_sec - t1.tv_sec);
     timeTaken += (t2.tv_usec - t1.tv_usec) / 1e6;   // us to s
 
-	printf("\n\t\t **** STATISTICS **** \n");
+	printf("\n\t\t\t**** STATISTICS ****\n\n");
 	printf("\t\tNumber of bits read = %d\n", bitsRead);
 	printf("\t\tTime it took to send the file =  %fs\n", timeTaken);
 
@@ -241,28 +229,9 @@ int receive_file(char *portname)
 	if (!resolve_control_packet(buf, &filesizeAtEnd, (char *)filenameAtEnd))
 		return 0;
 
-	/* printf("File info at beginning\n");
-	printf("\t");
-	for (int i = 0; i < strlen(filename) - 1; i++){
-		printf("%c", filename[i]);
-	}
-	printf("\n");
-	printf("\tFile size: %d\n", filesize);
-
-	printf("STRLEN(FILENAME) %ld\n", strlen(filename));
-	printf("STRLEN(FILENAMEATEND) %ld\n", strlen(filenameAtEnd));
-
-	printf("File info at end\n");
-	printf("\t");
-	for (int i = 0; i < strlen(filenameAtEnd) - 1; i++){
-		printf("%c", filenameAtEnd[i]);
-	}
-	printf("\n");
-	printf("\tFile size: %d\n", filesizeAtEnd); */
-
 	// check if info on start packet matches info on end packet
 	if (filesizeAtEnd != filesize || memcmp(filename, filenameAtEnd, strlen(filename)))
-		return 0;
+		return 0; 
 
 	// Close the port
 	if (!llclose(app->fd, app->device))

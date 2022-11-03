@@ -97,14 +97,15 @@ int llwrite(int fd, char *buffer, int length)
 	start_alarm(a);
 	get_possible_responses(responses);
 
-	if (!send_information_frame(ll->frame, ll->frameSize))
-		return -1;
-
 	do
 	{
 		if (!a->isActive)
 		{
 			a->isActive = TRUE;
+			
+			if (!send_information_frame(ll->frame, ll->frameSize))
+				return -1;
+			
 			printf("Sending data frame (size = %d).\n", ll->frameSize);
 			if (receive_supervision_frame(TRANSMITTER, responses[0]))
 			{
@@ -114,13 +115,8 @@ int llwrite(int fd, char *buffer, int length)
 			}
 			else if (receive_supervision_frame(TRANSMITTER, responses[1]))
 				printf("REJ received. Attempts: %d\n", a->counter++);
-			else if (!(bytes = send_information_frame(ll->frame, ll->frameSize)))
-				return -1;
 		}
-
-		if (a->counter >= MAXTRANSMISSIONS)
-			return -1;
-	} while (1);
+	} while (a->counter < MAXTRANSMISSIONS);
 
 	ll->sequenceNumber = !ll->sequenceNumber;
 
