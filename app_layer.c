@@ -200,9 +200,8 @@ int receive_file(char *portname)
 
 	gettimeofday(&t2, NULL);
 
-	// compute and print the elapsed time in millisec
-    timeTaken = (t2.tv_sec - t1.tv_sec);
-    timeTaken += (t2.tv_usec - t1.tv_usec) / 1e6;   // us to s
+    timeTaken = (t2.tv_sec - t1.tv_sec) * 1e6; // s to us
+    timeTaken = (timeTaken + (t2.tv_usec - t1.tv_usec)) / 1e6;   // us to s
 
 	printf("\n\t\t\t**** STATISTICS ****\n\n");
 	printf("\t\tNumber of bits read = %d\n", bitsRead);
