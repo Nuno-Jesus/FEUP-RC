@@ -113,10 +113,12 @@ int llwrite(int fd, char *buffer, int length)
 				stop_alarm();
 				break;
 			}
-			else if (receive_supervision_frame(TRANSMITTER, responses[1]))
+			else
 				printf("REJ received. Attempts: %d\n", a->counter++);
 		}
-	} while (a->counter < MAXTRANSMISSIONS);
+		if (a->counter >= MAXTRANSMISSIONS)
+			return -1;
+	} while (1);
 
 	ll->sequenceNumber = !ll->sequenceNumber;
 
@@ -237,10 +239,9 @@ int llopen_transmitter()
 				break;
 			}
 		}
-		// In case of a timeout when reading the UA frame, a new alarm is setted up
-		// and a->counter is incremented. It pretty much works like calling the handler
-		// at the end of a send/receive pair
-	} while (a->counter < MAXTRANSMISSIONS);
+		if (a->counter >= MAXTRANSMISSIONS)
+			return 0;
+	} while (1);
 
 	return 1;
 }
@@ -261,10 +262,9 @@ int llopen_receiver()
 			stop_alarm();
 			break;
 		}
-		// In case of a timeout when reading the UA frame, a new alarm is setted up
-		// and a->counter is incremented. It pretty much works like calling the handler
-		// at the end of a send/receive pair
-	} while (a->counter < MAXTRANSMISSIONS);
+		if (a->counter >= MAXTRANSMISSIONS)
+			return 0;
+	} while (1);
 
 	return 1;
 }
@@ -284,7 +284,9 @@ int llclose_receiver()
 			else
 				a->counter++;
 		}
-	} while (a->counter < MAXTRANSMISSIONS);
+		if (a->counter >= MAXTRANSMISSIONS)
+			return 0;
+	} while (1);
 
 	return 1;
 }
@@ -310,8 +312,9 @@ int llclose_transmitter()
 				}
 			}
 		}
-
-	} while (a->counter < MAXTRANSMISSIONS);
+		if (a->counter >= MAXTRANSMISSIONS)
+			return 0;
+	} while (1);
 
 	printf("Sending UA frame.\n");
 	return 1;

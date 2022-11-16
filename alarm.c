@@ -53,5 +53,9 @@ void default_handler(int signal)
 
 	a->counter++;
 	a->isActive = FALSE;
-	alarm(a->timeout);
+
+	if (a->counter < MAXTRANSMISSIONS)
+		alarm(a->timeout);
+	else
+		printf("\n\t>>> REACHED MAX TRANSMISSIONS. ABORTING <<<\n\n");
 }
