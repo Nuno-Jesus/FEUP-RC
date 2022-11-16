@@ -87,6 +87,7 @@ typedef enum device_t
 #define MAXTRANSMISSIONS 3
 
 #define BAUDRATE B38400
+#define BAUDRATE_VALUE 38400
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
 #define FALSE 0

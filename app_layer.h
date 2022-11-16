@@ -70,7 +70,7 @@ unsigned char *assemble_control_packet(int *packetSize, PacketControl control, c
  * @param sequenceNumber The number of the packet (mod 256)
  * @return Data packet
  */
-unsigned char *assemble_data_packet(int *packetSize, unsigned char *data, int dataSize, int sequenceNumber)
+unsigned char *assemble_data_packet(int *packetSize, unsigned char *data, int dataSize, int sequenceNumber);
 
 /**
  * @brief Creates a new AppLayer to store either Transmitter or Receiver information

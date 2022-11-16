@@ -209,8 +209,7 @@ int receive_file(char *portname)
 	printf("\t\tTime it took to send the file =  %fs\n", timeTaken);
 
 	double R = bitsRead/timeTaken;
-	double baudRate = 180000.0;
-	double S = R / baudRate;
+	double S = R / BAUDRATE_VALUE;
 
 	printf("\t\tBaudrate = %lf\n", R);
 	printf("\t\tS = %lf\n\n", S);
