@@ -35,26 +35,12 @@ int llclose(int fd, Device device)
 	return canonical_close(fd);
 }
 
-void get_possible_responses(unsigned char responses[])
+unsigned char *assemble_information_frame(unsigned char *buffer, int *length)
 {
-	if (ll->sequenceNumber == 0)
-	{
-		responses[0] = RR01;
-		responses[1] = REJ00;
-	}
-	else
-	{
-		responses[0] = RR00;
-		responses[1] = REJ01;
-	}
-}
-
-unsigned char* assemble_information_frame(unsigned char *buffer, int length)
-{
-	unsigned char *frame;
+	unsigned char *frame, *res;
 	int size;
 
-	size = 6 + length;
+	size = 6 + *length;
 	if (!(frame = (unsigned char *)malloc(size * sizeof(char))))
 		return NULL;
 
@@ -62,47 +48,62 @@ unsigned char* assemble_information_frame(unsigned char *buffer, int length)
 	frame[1] = ADDRESS;
 	frame[2] = SEQ(ll->sequenceNumber);
 	frame[3] = BCC(frame[1], frame[2]);
-	memcpy(frame + 4, buffer, length);
-	frame[4 + length] = get_bcc2(buffer + 4, length - 4);
-	frame[4 + length + 1] = FLAG;
+	memcpy(frame + 4, buffer, *length);
+	frame[4 + *length] = get_bcc2(frame + 4, *length);
+	frame[4 + *length + 1] = FLAG;
 
-	return frame;
+	#ifdef DEBUG
+		printf("Initial frame length: %d\n", size);
+		print_frame(frame, size);
+	#endif
+
+	if (!(res = stuff_information_frame(frame, &size)))
+		return NULL;
+
+	#ifdef DEBUG
+		printf("Stuffed frame length: %d\n", size);
+		print_frame(res, size);
+	#endif
+
+	*length = size;
+	return res;
 }
 
 int llwrite(int fd, char *buffer, int length)
 {
-	unsigned char responses[2];
+	unsigned char expected;
 	int bytes;
-	int newLength;
+	int newLength = length;
 
-	if (!(newLength = stuff_information_frame(buffer, length)))
+	if (!(ll->frame = assemble_information_frame(buffer, &newLength)))
 		return -1;
 
-	if (!(ll->frame = assemble_information_frame(buffer, newLength)))
-		return -1;
-		
-	ll->frameSize = 6 + newLength;
-	print_frame(ll->frame, ll->frameSize);
+	ll->frameSize = newLength;
+	expected = ll->sequenceNumber == 0 ? RR01 : RR00;
+
 	start_alarm(a);
-	get_possible_responses(responses);
-
-	if (!send_information_frame(ll->frame, ll->frameSize))
-		return -1;
-
 	do
 	{
-		printf("Sending data frame (length = %d).\n", length);
-		if (receive_supervision_frame(TRANSMITTER, responses[0]))
+		if (!a->isActive)
 		{
-			stop_alarm();
-			break;
+			a->isActive = TRUE;
+			
+			if (!send_information_frame(ll->frame, ll->frameSize))
+				return -1;
+			
+			printf("Sending data frame (size = %d).\n", ll->frameSize);
+			if (receive_supervision_frame(TRANSMITTER, expected))
+			{
+				printf("RR %d received.\n", expected);
+				stop_alarm();
+				break;
+			}
+			else
+				printf("REJ received. Attempts: %d\n", a->counter++);
 		}
-		else if (receive_supervision_frame(TRANSMITTER, responses[1]))
-			printf("REJ received. Attempts: %d\n", a->counter++);
-		else if (!(bytes = send_information_frame(ll->frame, ll->frameSize)))
+		if (a->counter >= MAXTRANSMISSIONS)
 			return -1;
-
-	} while (a->counter < MAXTRANSMISSIONS);
+	} while (1);
 
 	ll->sequenceNumber = !ll->sequenceNumber;
 
@@ -117,86 +118,76 @@ int llread(int fd, char *buffer)
 
 	while (!bufferFull)
 	{
-		if(!receive_information_frame(RECEIVER))
+		// Read the frame
+		if (!receive_information_frame(RECEIVER))
 			return 0;
 
-		if ((bytesRead = unstuff_information_frame(ll->frame, ll->frameSize)) < 0)
+		// Unstuff it
+		if ((ll->frame = unstuff_information_frame(ll->frame, &ll->frameSize)) < 0)
 			return 0;
 
-		int controlByte;
+		#ifdef DEBUG
+			printf("Size after destuffing: %d\n", ll->frameSize);
+		#endif
 
-		if (ll->frame[2] == SEQ(0))
-			controlByte = 0;
+		// Parse the control byte (Sequence Number)
+		int controlByte = ll->frame[2] == 0 ? 0 : 1;
 
-		else
-			controlByte = 1;
-
-		int bcc2 = ll->frame[bytesRead - 2];
+		// Get the bbc2 field
+		int bcc2 = ll->frame[ll->frameSize - 2];
 
 		// Check if bcc2 is correct
-		if (bcc2 == get_bcc2(&ll->frame[4], bytesRead - 6))
+		#ifdef DEBUG
+			printf("bcc vs get_bcc2: 0x%02X, 0x%02X\n", bcc2, get_bcc2(&ll->frame[4], ll->frameSize - 6));
+		#endif
+
+		if (bcc2 == get_bcc2(&ll->frame[4], ll->frameSize - 6))
 		{
 			if (controlByte != ll->sequenceNumber)
 			{
-				if (!controlByte)
-				{
-					responseByte = RR01;
-					ll->sequenceNumber = 1;
-				}
-				else
-				{
-					responseByte = RR00;
-					ll->sequenceNumber = 0;
-				}
+				responseByte = (controlByte == 1) ? RR00 : RR01;
+				ll->sequenceNumber = (controlByte == 1) ? 0 : 1;
 			}
+
 			else
 			{
-				for (int i = 0; i < bytesRead; i++){
-					buffer[i] = ll->frame[4 + i];
-				}
-
+				//printf("BCC is correct\n");
 				bufferFull = true;
+				memcpy(buffer, ll->frame + 4, ll->frameSize - 2);
 
-				if(!controlByte){
-					responseByte = RR01; 
-					ll->sequenceNumber = 1; 
-				}
-				else{
-					responseByte = RR00;
-					ll->sequenceNumber = 0;
-				}
+				responseByte = (controlByte == 1) ? RR00 : RR01;
+				ll->sequenceNumber = (controlByte == 1) ? 0 : 1;
 			}
 		}
-		// bcc2 was incorrect
-		else {
+		// error in the data field
+		else
+		{
+			// If this is a duplicated frame, do nothing with the data, and send RR(N)
 			if (controlByte != ll->sequenceNumber)
 			{
-				if(!controlByte){
-					responseByte = RR01; 
-					ll->sequenceNumber = 1; 
-				}
-				else{
-					responseByte = RR00;
-					ll->sequenceNumber = 0;
-				}
+				responseByte = (controlByte == 1) ? RR00 : RR01;
+				ll->sequenceNumber = (controlByte == 1) ? 0 : 1;
 			}
+			// If this is a new frame, request a retrasmission with REJ(N)
 			else
 			{
-				if (!controlByte) 
-				{
-					responseByte = REJ01; 
-					ll->sequenceNumber = 1;
-				}
-				else
-				{
-					responseByte = REJ00;
-					ll->sequenceNumber = 0;
-				}
+				responseByte = (controlByte == 1) ? REJ01 : REJ00;
+				ll->sequenceNumber = (controlByte == 1) ? 1 : 0;
 			}
 		}
 	}
 
-	if(!send_supervision_frame(responseByte))
+	//If the frame was correct, free it to handle the next one
+	if (ll->frame)
+	{
+		free(ll->frame);
+		ll->frame = NULL;
+	}
+
+	bytesRead = ll->frameSize;
+	ll->frameSize = 0;
+
+	if (!send_supervision_frame(responseByte))
 		return 0;
 
 	return (bytesRead - 6);
@@ -204,107 +195,100 @@ int llread(int fd, char *buffer)
 
 int llopen_transmitter()
 {
-	if (!send_supervision_frame(SET))
-		return 0;
-
 	start_alarm(a);
 
 	do
 	{
-		printf("Sending SET frame.\n");
-		if (receive_supervision_frame(TRANSMITTER, UA))
+		if (!a->isActive)
 		{
-			printf("REceived UA frame.\n");
-			stop_alarm();
-			break;
+			a->isActive = TRUE;
+			if (!send_supervision_frame(SET))
+				return 0;
+
+			printf("Sending SET frame.\n");
+			if (receive_supervision_frame(TRANSMITTER, UA))
+			{
+				printf("Received UA frame.\n");
+				stop_alarm();
+				break;
+			}
 		}
-		else if (!send_supervision_frame(SET))
+		if (a->counter >= MAXTRANSMISSIONS)
 			return 0;
-		// In case of a timeout when reading the UA frame, a new alarm is setted up
-		// and a->counter is incremented. It pretty much works like calling the handler
-		// at the end of a send/receive pair
-	} while (a->counter < MAXTRANSMISSIONS);
+	} while (1);
 
 	return 1;
 }
 
 int llopen_receiver()
 {
-	if (!receive_supervision_frame(RECEIVER, SET))
-		return 0;
-
 	start_alarm(a);
 
 	do
 	{
-		printf("Received SET frame.\n");
-		if (send_supervision_frame(UA))
+		if (receive_supervision_frame(RECEIVER, SET))
 		{
+			printf("Received SET frame.\n");
+			if (!send_supervision_frame(UA))
+				return 0;
+
 			printf("Sending UA frame.\n");
 			stop_alarm();
 			break;
 		}
-		else if (!receive_supervision_frame(RECEIVER, SET))
+		if (a->counter >= MAXTRANSMISSIONS)
 			return 0;
-		// In case of a timeout when reading the UA frame, a new alarm is setted up
-		// and a->counter is incremented. It pretty much works like calling the handler
-		// at the end of a send/receive pair
-	} while (a->counter < MAXTRANSMISSIONS);
+	} while (1);
 
 	return 1;
 }
 
 int llclose_receiver()
 {
-	if (!receive_supervision_frame(RECEIVER, DISC))
-		return 0;
-
-	start_alarm(a);
-
 	do
 	{
-		printf("Received DISC frame.\n");
-		if (send_supervision_frame(DISC))
+		if (receive_supervision_frame(RECEIVER, DISC))
 		{
-			printf("Sending DISC frame.\n");
-			stop_alarm();
-			break;
+			if (send_supervision_frame(DISC))
+			{
+				printf("Sending DISC frame.\n");
+				stop_alarm();
+				break;
+			}
+			else
+				a->counter++;
 		}
-		else if (!receive_supervision_frame(RECEIVER, DISC))
+		if (a->counter >= MAXTRANSMISSIONS)
 			return 0;
-		// In case of a timeout when reading the UA frame, a new alarm is setted up
-		// and a->counter is incremented. It pretty much works like calling the handler
-		// at the end of a send/receive pair
-	} while (a->counter < MAXTRANSMISSIONS);
+	} while (1);
 
 	return 1;
 }
 
 int llclose_transmitter()
 {
-	if (!send_supervision_frame(DISC))
-		return 0;
-
 	start_alarm(a);
 
 	do
 	{
-		printf("Sending DISC frame.\n");
-		if (receive_supervision_frame(TRANSMITTER, DISC))
+		if (!a->isActive)
 		{
-			printf("Received DISC frame.\n");
-			stop_alarm();
-			break;
+			a->isActive = TRUE;
+			if (send_supervision_frame(DISC))
+			{
+				printf("Sending DISC frame.\n");
+				if (receive_supervision_frame(TRANSMITTER, DISC))
+				{
+					printf("Received DISC frame.\n");
+					send_supervision_frame(UA);
+					stop_alarm();
+					break;
+				}
+			}
 		}
-		else if (!send_supervision_frame(DISC))
+		if (a->counter >= MAXTRANSMISSIONS)
 			return 0;
-		// In case of a timeout when reading the UA frame, a new alarm is setted up
-		// and a->counter is incremented. It pretty much works like calling the handler
-		// at the end of a send/receive pair
-	} while (a->counter < MAXTRANSMISSIONS);
-
-	if (!send_supervision_frame(UA))
-		return 0;
+	} while (1);
 
 	printf("Sending UA frame.\n");
 	return 1;

@@ -13,13 +13,13 @@ Port *new_port(char *name, int fd)
 	port->name = name;
 	memset(&port->oldtio, 0, sizeof(port->oldtio));
 	memset(&port->newtio, 0, sizeof(port->newtio));
-	
+
 	return port;
 }
 
 void delete_port(Port *port)
 {
-	//free(port->name);
+	// free(port->name);
 	free(port);
 }
 
@@ -34,51 +34,43 @@ int canonical_open(char *portname)
 	if (port == NULL)
 		print_error("malloc()");
 
-    // Save current port settings
-    if (tcgetattr(port->fd, &port->oldtio) == -1)
+	// Save current port settings
+	if (tcgetattr(port->fd, &port->oldtio) == -1)
 	{
 		delete_port(port);
-   		print_error("tcgetattr()");
+		print_error("tcgetattr()");
 	}
 
-    // Clear struct for new port settings
-    memset(&port->newtio, 0, sizeof(port->newtio));
+	// Clear struct for new port settings
+	memset(&port->newtio, 0, sizeof(port->newtio));
 
-    port->newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-    port->newtio.c_iflag = IGNPAR;
-    port->newtio.c_oflag = 0;
+	port->newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+	port->newtio.c_iflag = IGNPAR;
+	port->newtio.c_oflag = 0;
 
-    // Set input mode (non-canonical, no echo,...)
-    port->newtio.c_lflag = 0;
-    port->newtio.c_cc[VTIME] = 1;
-    port->newtio.c_cc[VMIN] = 0;  
+	// Set input mode (non-canonical, no echo,...)
+	port->newtio.c_lflag = 0;
+	port->newtio.c_cc[VTIME] = 1;
+	port->newtio.c_cc[VMIN] = 0;
 
-    // VTIME e VMIN should be changed in order to protect with a
-    // timeout the reception of the following character(s)
+	tcflush(port->fd, TCIOFLUSH);
 
-    // Now clean the line and activate the settings for the port
-    // tcflush() discards data written to the object referred to
-    // by fd but not transmitted, or data received but not read,
-    // depending on the value of queue_selector:
-    //   TCIFLUSH - flushes data received but not read.
-    tcflush(port->fd, TCIOFLUSH);
-
-    // Set new port settings
-    if (tcsetattr(port->fd, TCSANOW, &port->newtio) == -1)
+	// Set new port settings
+	if (tcsetattr(port->fd, TCSANOW, &port->newtio) == -1)
 		print_error("tcsetattr()");
 
-    printf("New termios structure set\n");
+	printf("New termios structure set\n");
 	return fd;
 }
 
 int canonical_close(int fd)
 {
-	// Restore the port->oldtio port settings
-    if (tcsetattr(fd, TCSANOW, &port->oldtio) == -1)
-   		print_error("tcsetattr()");
+	// Restore the old port settings
+	if (tcsetattr(fd, TCSANOW, &port->oldtio) == -1)
+		print_error("tcsetattr()");
 
 	delete_port(port);
-    close(fd);
+	close(fd);
 
 	return 1;
 }
@@ -88,18 +80,20 @@ int send_supervision_frame(FrameControl field)
 	ssize_t bytes;
 	unsigned char *frame = assemble_supervision_frame(field);
 
+	#ifdef DEBUG
+		printf("\n\tSENDING SUPERVISION FRAME %d\n\n", field);
+		print_frame(frame, 5);
+	#endif
+
 	bytes = write(port->fd, frame, 5);
 	free(frame);
-	
-	bytes >= 0 
-		? printf("Sending supervision frame\n") 
-		: printf("Couldn't send the supervision frame\n");
+
 	return bytes;
 }
 
 int receive_supervision_frame(Device device, FrameControl field)
 {
-	StateMachine* machine = new_state_machine(device, field, FALSE);
+	StateMachine *machine = new_state_machine(device, field, FALSE);
 	if (!machine)
 		return 0;
 
@@ -111,6 +105,7 @@ int receive_supervision_frame(Device device, FrameControl field)
 		state_machine_multiplexer(machine);
 	}
 
+	delete_state_machine(machine);
 	return 1;
 }
 
@@ -118,27 +113,36 @@ int send_information_frame(unsigned char *frame, int size)
 {
 	if (!write(port->fd, frame, size))
 		return 0;
-
+	
 	return 1;
 }
 
 int receive_information_frame(Device device)
 {
-	StateMachine* machine = new_state_machine(device, SET, TRUE);
+	StateMachine *machine = new_state_machine(device, SET, TRUE);
 	if (!machine)
 		return 0;
+
+	State previousState = START;
 
 	while (machine->state != END)
 	{
 		if (!read(port->fd, &machine->byte, 1))
 			return 0;
 
-		ll->frame = realloc(ll->frame, ++ll->frameSize);
-		ll->frame[ll->frameSize - 1] = machine->byte;
-
 		state_machine_multiplexer(machine);
+
+		// save the byte and increment the size of the frame
+		if (machine->state != previousState || machine->state == WAIT_END_FLAG)
+		{
+			ll->frame = realloc(ll->frame, ++ll->frameSize);
+			ll->frame[ll->frameSize - 1] = machine->byte;
+			previousState = machine->state;
+		}
 	}
 
+	// print_frame(ll->frame, ll->frameSize);
+	delete_state_machine(machine);
 	return 1;
 }
 
@@ -150,8 +154,8 @@ unsigned char *assemble_supervision_frame(FrameControl field)
 
 	frame[0] = FLAG;
 	frame[1] = ADDRESS;
-	//Apply switch to further cases of other supervision frames
-	switch(field)
+	// Apply switch to further cases of other supervision frames
+	switch (field)
 	{
 		case SET:
 			frame[2] = CONTROL_SET;
@@ -181,7 +185,7 @@ unsigned char *assemble_supervision_frame(FrameControl field)
 			frame[2] = CONTROL_RR(1);
 			frame[3] = BCC_RR(1);
 			break;
-	}
+		}
 	frame[4] = FLAG;
 
 	return frame;

@@ -7,6 +7,8 @@
 #include "macros.h"
 #include <sys/times.h>
 #include <sys/time.h>
+#include <time.h>
+
 
 typedef struct app_layer_t {
     int fd;

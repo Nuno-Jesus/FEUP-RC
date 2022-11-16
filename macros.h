@@ -49,10 +49,10 @@ typedef enum packet_parameter_t
 typedef enum device_t
 {
 	RECEIVER,
-    TRANSMITTER
+	TRANSMITTER
 } Device;
 
-//#define DEBUG
+// #define DEBUG
 
 #define FLAG 0x7E
 #define ADDRESS 0x03
@@ -76,7 +76,9 @@ typedef enum device_t
 #define BCC_REJ(s) CONTROL_REJ(s) ^ ADDRESS
 
 #define BCC(a, c) a ^ c
+
 #define SEQ(s) s << 6
+#define BCC_SEQ(s) (SEQ(s) ^ ADDRESS)
 
 #define TRANSMITTER_PORT "/dev/ttyS10"
 #define RECEIVER_PORT "/dev/ttyS11"
@@ -94,7 +96,7 @@ typedef enum device_t
 #define CONTROL_DATA_FIELD_2 0x40
 
 #define MAX_FILENAME_SIZE 255
-#define MAX_DATA 1024
-#define MAX_DATA_PACKET (MAX_DATA + 4)	// 4 extra bytes for the packet header
+#define MAX_DATA_SIZE 256	/** Max size of the data field in a data packet */
+#define MAX_PACKET_SIZE (MAX_DATA_SIZE + 4)	/** Max size of a data packet is the size of the data itself plus 4 bytes for the header */
 
 #endif
