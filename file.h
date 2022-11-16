@@ -19,12 +19,4 @@ unsigned long get_file_size(char *);
  */
 char* get_file_content(char *);
 
-/**
- * @brief Check for differences between files
- * @param filename1 Name of the first file
- * @param filename2 Name of the second file
- * @return 1 if files are the exact same, 0 otherwise
-*/
-int check_file_diff(char *, char *);
-
 #endif

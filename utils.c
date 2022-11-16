@@ -69,7 +69,7 @@ unsigned char* stuff_information_frame(unsigned char *frame, int *size)
 	if (!frame || !size)
 		return 0;
 
-	unsigned char *buf; // 4 bytes for the header + size of the data packet + 2 bytes for the tail
+	unsigned char *buf; 
 	int newSize = *size;
 
 	if (!(buf = (unsigned char *)malloc(*size * sizeof(unsigned char))))

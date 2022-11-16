@@ -32,7 +32,7 @@ int send_file(char *, char *);
 int receive_file(char* );
 
 /**
- * @brief
+ * @brief Given a data packet, resolves its content
  * @param packet Contains the data packet to be resolved
  * @param sequence_number Will contain sequence number of the packet.
  * @param data Will contain packet data field
@@ -42,8 +42,7 @@ int resolve_data_packet(unsigned char *, int *, unsigned char *);
 
 
 /**
- * @brief
- *
+ * @brief Given a control packet, resolves its content
  * @param packet Contains the control packet to be resolved
  * @param fileSize Will contain the size of the file
  * @param filename Will contain the name of the file.
@@ -51,6 +50,27 @@ int resolve_data_packet(unsigned char *, int *, unsigned char *);
  */
 int resolve_control_packet(unsigned char *packet, int*, char*);
 
+/**
+ * @brief Assembles a control packet given the used parameters to be used both at the end
+ * and start of the serial communication. 
+ * 
+ * @param packetSize A pointer that returns the packet final size
+ * @param control A enum stating which control packet to build (START or END)
+ * @param filename Name of the file
+ * @param filesize Size of the file
+ * @return Control packet 
+ */
+unsigned char *assemble_control_packet(int *packetSize, PacketControl control, char *filename, int filesize);
+
+/**
+ * @brief Assembles an information packet to encapsulate the file data.
+ * @param packetSize A pointer that returns the packet final size
+ * @param data The data chunk to encapsulate
+ * @param dataSize The data size
+ * @param sequenceNumber The number of the packet (mod 256)
+ * @return Data packet
+ */
+unsigned char *assemble_data_packet(int *packetSize, unsigned char *data, int dataSize, int sequenceNumber)
 
 /**
  * @brief Creates a new AppLayer to store either Transmitter or Receiver information

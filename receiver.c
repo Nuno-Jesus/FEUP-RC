@@ -14,6 +14,9 @@
 
 int main(int argc, char *argv[])
 {
+	if (argc < 2)
+		print_usage(argv[0]);
+		
 	if (!receive_file(argv[1]))
 		print_error("receive_file(): error\n");
 

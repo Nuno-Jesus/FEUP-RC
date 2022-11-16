@@ -2,7 +2,7 @@
 
 extern LinkLayer *ll;
 
-StateMachine *new_state_machine(Device device, FrameControl frame, int isInfoFrame)
+StateMachine *new_state_machine(Device device, FrameControl control, int isInfoFrame)
 {
 	StateMachine *machine = (StateMachine *)malloc(sizeof(StateMachine));
 	if (machine == NULL)
@@ -10,7 +10,7 @@ StateMachine *new_state_machine(Device device, FrameControl frame, int isInfoFra
 
 	machine->state = START;
 	machine->device = device;
-	machine->controlField = frame;
+	machine->controlField = control;
 	machine->isInfoFrame = isInfoFrame;
 	machine->byte = 0x00;
 	machine->frame = (unsigned char *)malloc(5 * sizeof(unsigned char));

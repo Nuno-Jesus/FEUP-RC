@@ -23,7 +23,6 @@ unsigned char *assemble_control_packet(int *packetSize, PacketControl control, c
 	res[3 + len + 1] = (unsigned char)strlen(filename);
 	memcpy(res + (3 + len + 2), filename, strlen(filename));
 
-
 	return res;
 }
 
@@ -151,9 +150,10 @@ int receive_file(char *portname)
 	}
 	else
 		return 0;
+		
 
 	// create a file to write the received data to it
-	FILE *filePtr = fopen("received_pinguim.gif", "w");
+	FILE *filePtr = fopen(filename, "w");
 	if (!filePtr)
 		return 0;
 
@@ -231,12 +231,12 @@ int receive_file(char *portname)
 	if (filesizeAtEnd != filesize || memcmp(filename, filenameAtEnd, strlen(filename)))
 		return 0; 
 
+	// Check if the size received is the same as the file that was written
+	if (get_file_size(filenameAtEnd) != filesizeAtEnd)
+		return 0;
+	
 	// Close the port
 	if (!llclose(app->fd, app->device))
-		return 0;
-
-	// check the file content
-	if (!check_file_diff("pinguim.gif", "received_pinguim.gif"))
 		return 0;
 
 	return 1;

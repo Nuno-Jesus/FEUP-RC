@@ -14,10 +14,12 @@
 
 int main(int argc, char *argv[])
 {
+	if (argc < 3)
+		print_usage(argv[0]);
+		
 	if (!send_file(argv[1], argv[2]))
 		print_error("send_file(): error\n");
 
 	printf("Gracefully ending.\n");
-
     return 0;
 }
