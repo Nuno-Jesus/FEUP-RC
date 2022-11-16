@@ -91,9 +91,6 @@ void wait_control_handler(StateMachine *machine)
 {
 	if (machine->isInfoFrame)
 	{
-		//printf("Machine Byte: %d\n", machine->byte);
-		//printf("Sequence Number: %d\n", ll->sequenceNumber);
-
 		if (ll->sequenceNumber == 0 && machine->byte == SEQ(0))
 			machine->state = WAIT_BCC;
 
@@ -224,7 +221,6 @@ void wait_bcc_handler(StateMachine *machine)
 		break;
 
 	default:
-		printf("Default state\n");
 		machine->state = START;
 		break;
 	}

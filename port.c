@@ -53,14 +53,6 @@ int canonical_open(char *portname)
 	port->newtio.c_cc[VTIME] = 1;
 	port->newtio.c_cc[VMIN] = 0;
 
-	// VTIME e VMIN should be changed in order to protect with a
-	// timeout the reception of the following character(s)
-
-	// Now clean the line and activate the settings for the port
-	// tcflush() discards data written to the object referred to
-	// by fd but not transmitted, or data received but not read,
-	// depending on the value of queue_selector:
-	//   TCIFLUSH - flushes data received but not read.
 	tcflush(port->fd, TCIOFLUSH);
 
 	// Set new port settings
@@ -73,7 +65,7 @@ int canonical_open(char *portname)
 
 int canonical_close(int fd)
 {
-	// Restore the port->oldtio port settings
+	// Restore the old port settings
 	if (tcsetattr(fd, TCSANOW, &port->oldtio) == -1)
 		print_error("tcsetattr()");
 
@@ -89,7 +81,7 @@ int send_supervision_frame(FrameControl field)
 	unsigned char *frame = assemble_supervision_frame(field);
 
 	#ifdef DEBUG
-		printf("\n\tSENDING FRAME %d\n\n", field);
+		printf("\n\tSENDING SUPERVISION FRAME %d\n\n", field);
 		print_frame(frame, 5);
 	#endif
 
@@ -107,7 +99,6 @@ int receive_supervision_frame(Device device, FrameControl field)
 
 	while (machine->state != END)
 	{
-
 		if (!read(port->fd, &machine->byte, 1))
 			return 0;
 

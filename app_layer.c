@@ -189,9 +189,7 @@ int receive_file(char *portname)
 
 			// write to the file
 			if (((int)fwrite(data, 1, bytesRead, filePtr) < bytesRead))
-			{
 				return 0;
-			}
 		}
 
 		else if (buf[0] == END_PACKET)
@@ -265,17 +263,17 @@ int send_file(char *portname, char *filename)
 	if (!(packet = assemble_control_packet(&packetSize, START_PACKET, filename, fileSize)))
 		return 0;
 
-#ifdef DEBUG
-	printf("\n\tAssembled Control Packet\n\n");
-	print_frame(packet, packetSize);
-#endif
+	#ifdef DEBUG
+		printf("\n\tAssembled Control Packet\n\n");
+		print_frame(packet, packetSize);
+	#endif
 
+	//Send start control packet
 	if (llwrite(app->fd, packet, packetSize) == -1)
 	{
 		canonical_close(app->fd);
 		return 0;
 	}
-
 	free(packet);
 
 	int seqNum = 0;
@@ -299,6 +297,7 @@ int send_file(char *portname, char *filename)
 		seqNum = (seqNum + 1) % 256;
 	}
 
+	//Send end control packet
 	if (!(packet = assemble_control_packet(&packetSize, END_PACKET, filename, fileSize)))
 		return 0;
 

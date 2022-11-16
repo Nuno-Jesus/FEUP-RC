@@ -35,20 +35,6 @@ int llclose(int fd, Device device)
 	return canonical_close(fd);
 }
 
-void get_possible_responses(unsigned char responses[])
-{
-	if (ll->sequenceNumber == 0)
-	{
-		responses[0] = RR01;
-		responses[1] = REJ00;
-	}
-	else
-	{
-		responses[0] = RR00;
-		responses[1] = REJ01;
-	}
-}
-
 unsigned char *assemble_information_frame(unsigned char *buffer, int *length)
 {
 	unsigned char *frame, *res;
@@ -66,18 +52,18 @@ unsigned char *assemble_information_frame(unsigned char *buffer, int *length)
 	frame[4 + *length] = get_bcc2(frame + 4, *length);
 	frame[4 + *length + 1] = FLAG;
 
-	/* #ifdef DEBUG
-		printf("Assembled frame length: %d\n", size);
+	#ifdef DEBUG
+		printf("Initial frame length: %d\n", size);
 		print_frame(frame, size);
 	#endif
- */
+
 	if (!(res = stuff_information_frame(frame, &size)))
 		return NULL;
 
-#ifdef DEBUG
-	printf("Stuffed frame length: %d\n", size);
-	print_frame(res, size);
-#endif
+	#ifdef DEBUG
+		printf("Stuffed frame length: %d\n", size);
+		print_frame(res, size);
+	#endif
 
 	*length = size;
 	return res;
@@ -85,7 +71,7 @@ unsigned char *assemble_information_frame(unsigned char *buffer, int *length)
 
 int llwrite(int fd, char *buffer, int length)
 {
-	unsigned char responses[2];
+	unsigned char expected;
 	int bytes;
 	int newLength = length;
 
@@ -93,10 +79,9 @@ int llwrite(int fd, char *buffer, int length)
 		return -1;
 
 	ll->frameSize = newLength;
+	expected = ll->sequenceNumber == 0 ? RR01 : RR00;
 
 	start_alarm(a);
-	get_possible_responses(responses);
-
 	do
 	{
 		if (!a->isActive)
@@ -107,9 +92,9 @@ int llwrite(int fd, char *buffer, int length)
 				return -1;
 			
 			printf("Sending data frame (size = %d).\n", ll->frameSize);
-			if (receive_supervision_frame(TRANSMITTER, responses[0]))
+			if (receive_supervision_frame(TRANSMITTER, expected))
 			{
-				printf("RR %d received.\n", responses[0]);
+				printf("RR %d received.\n", expected);
 				stop_alarm();
 				break;
 			}
@@ -137,21 +122,13 @@ int llread(int fd, char *buffer)
 		if (!receive_information_frame(RECEIVER))
 			return 0;
 
-		/* #ifdef DEBUG
-			printf("\n\tBEFORE DESTUFFING\n\n");
-			print_frame(ll->frame, ll->frameSize);
-		#endif */
-
 		// Unstuff it
 		if ((ll->frame = unstuff_information_frame(ll->frame, &ll->frameSize)) < 0)
 			return 0;
 
-			// printf("Size after destuffing: %d\n", ll->frameSize);
-
-#ifdef DEBUG
-		printf("\n\tAFTER DESTUFFING\n\n");
-		print_frame(ll->frame, ll->frameSize);
-#endif
+		#ifdef DEBUG
+			printf("Size after destuffing: %d\n", ll->frameSize);
+		#endif
 
 		// Parse the control byte (Sequence Number)
 		int controlByte = ll->frame[2] == 0 ? 0 : 1;
@@ -159,13 +136,9 @@ int llread(int fd, char *buffer)
 		// Get the bbc2 field
 		int bcc2 = ll->frame[ll->frameSize - 2];
 
-		// printf("bbc2 is %d\n", ll->frame[ll->frameSize - 2]);
-		// printf("get_bcc2 is %d\n", get_bcc2(&ll->frame[4], ll->frameSize - 6));
-
 		// Check if bcc2 is correct
-
 		#ifdef DEBUG
-		printf("bcc vs get_bcc2: 0x%02X, 0x%02X\n", bcc2, get_bcc2(&ll->frame[4], ll->frameSize - 6));
+			printf("bcc vs get_bcc2: 0x%02X, 0x%02X\n", bcc2, get_bcc2(&ll->frame[4], ll->frameSize - 6));
 		#endif
 
 		if (bcc2 == get_bcc2(&ll->frame[4], ll->frameSize - 6))
@@ -204,6 +177,7 @@ int llread(int fd, char *buffer)
 		}
 	}
 
+	//If the frame was correct, free it to handle the next one
 	if (ll->frame)
 	{
 		free(ll->frame);
