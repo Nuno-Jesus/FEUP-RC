@@ -14,7 +14,7 @@
 
 int main(int argc, char *argv[])
 {
-	if (!send_file(TRANSMITTER_PORT, "pinguim.gif"))
+	if (!send_file(argv[1], argv[2]))
 		print_error("send_file(): error\n");
 
 	printf("Gracefully ending.\n");

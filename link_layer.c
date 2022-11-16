@@ -35,40 +35,6 @@ int llclose(int fd, Device device)
 	return canonical_close(fd);
 }
 
-unsigned char *assemble_information_frame(unsigned char *buffer, int *length)
-{
-	unsigned char *frame, *res;
-	int size;
-
-	size = 6 + *length;
-	if (!(frame = (unsigned char *)malloc(size * sizeof(char))))
-		return NULL;
-
-	frame[0] = FLAG;
-	frame[1] = ADDRESS;
-	frame[2] = SEQ(ll->sequenceNumber);
-	frame[3] = BCC(frame[1], frame[2]);
-	memcpy(frame + 4, buffer, *length);
-	frame[4 + *length] = get_bcc2(frame + 4, *length);
-	frame[4 + *length + 1] = FLAG;
-
-	#ifdef DEBUG
-		printf("Initial frame length: %d\n", size);
-		print_frame(frame, size);
-	#endif
-
-	if (!(res = stuff_information_frame(frame, &size)))
-		return NULL;
-
-	#ifdef DEBUG
-		printf("Stuffed frame length: %d\n", size);
-		print_frame(res, size);
-	#endif
-
-	*length = size;
-	return res;
-}
-
 int llwrite(int fd, char *buffer, int length)
 {
 	unsigned char expected;
