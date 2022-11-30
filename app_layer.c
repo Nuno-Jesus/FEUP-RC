@@ -228,10 +228,6 @@ int receive_file(char *portname)
 	// check if info on start packet matches info on end packet
 	if (filesizeAtEnd != filesize || memcmp(filename, filenameAtEnd, strlen(filename)))
 		return 0; 
-
-	// Check if the size received is the same as the file that was written
-	if (get_file_size(filenameAtEnd) != filesizeAtEnd)
-		return 0;
 	
 	// Close the port
 	if (!llclose(app->fd, app->device))
