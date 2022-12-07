@@ -2,7 +2,7 @@ CC = gcc
 FLAGS = 
 DEPS = .
 
-TARGET = 
+TARGET = utils.o
 NAME = download
 
 
