@@ -13,4 +13,6 @@ char	**split(char const *s, char c);
 
 char	*substr(char const *s, unsigned int start, size_t len);
 
+char	*strmap(char const *s, char (*f)(unsigned int, char));
+
 #endif
