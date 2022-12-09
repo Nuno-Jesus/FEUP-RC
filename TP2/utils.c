@@ -53,7 +53,7 @@ static int	count_words(char const *s, char delim)
 	return (n);
 }
 
-static void	*delete_matrix(char **mat)
+void	*delete_matrix(char **mat)
 {
 	int	i;
 

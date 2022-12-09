@@ -1,24 +1,34 @@
-CC = gcc
-FLAGS = 
+#_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ COMMANDS _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
+CC = cc
+
+#_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ FLAGS _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
+CFLAGS = -Wall -Werror -Wextra -g
+MKFLAGS = --no-print-directory
+
+#_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ FOLDERS _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
 DEPS = .
 
+#_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ FILES _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
 TARGET = utils.o URL.o
 NAME = download
 
-
+#_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ RULES _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
 all: $(NAME)
 
 $(NAME): $(TARGET)
-	$(CC) $(FLAGS) main.c $(TARGET) -o $(NAME) -I $(DEPS)
+	$(CC) $(CFLAGS) main.c $(TARGET) -o $(NAME) -I $(DEPS)
+
+debug: fclean $(TARGET)
+	$(CC) $(CFLAGS) main.c $(TARGET) -o $(NAME) -I $(DEPS) -D DEBUG
 
 %.o : %.c 
-	$(CC) $(FLAGS) -c $< -o $@ -I $(DEPS)
+	$(CC) $(CFLAGS) -c $< -o $@ -I $(DEPS)
 
 clean:
-	rm -f $(TARGET)
+	@rm -f $(TARGET)
 
 fclean: clean
-	rm -f $(NAME) 
+	@rm -f $(NAME) 
 
 re: fclean all
 

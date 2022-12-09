@@ -13,4 +13,8 @@ typedef struct url_t
 
 URL *url_new (char *user, char *password, char *hostname, char *path);
 
+void url_delete(URL *url);
+
+void url_print(URL *url);
+
 #endif
