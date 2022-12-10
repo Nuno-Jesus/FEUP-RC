@@ -15,18 +15,31 @@ URL *url_new (char *user, char *password, char *hostname, char *path)
 
 void url_delete(URL *url)
 {
-	free(url->user);
-	free(url->password);
-	free(url->hostname);
-	free(url->path);
+	if (!url)
+		return ;
+	if (url->user)
+		free(url->user);
+	if (url->password)
+		free(url->password);
+	if (url->hostname)
+		free(url->hostname);
+	if (url->path)
+		free(url->path);
 	free(url);
 }
 
 void url_print(URL *url)
 {
+	if (!url)
+	{
+		printf("\n\t======== NULL URL ========\n\n");
+		return ;
+	}
+
 	printf("\n\t======== ASSEMBLED URL ========\n\n");
 	printf("User: %s\n", url->user);
 	printf("Password: %s\n", url->password);
 	printf("Hostname: %s\n", url->hostname);
 	printf("Path: %s\n", url->path);
+	printf("IP: %s\n", url->ip);
 }

@@ -9,6 +9,7 @@ typedef struct url_t
 	char *password;
 	char *hostname;
 	char *path;
+	char *ip;
 }URL;
 
 URL *url_new (char *user, char *password, char *hostname, char *path);

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include<arpa/inet.h>
+#include <arpa/inet.h>
 
 int main(int argc, char *argv[]) {
     struct hostent *h;
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Host name  : %s\n", h->h_name);
-    printf("IP Address : %s\n", inet_ntoa(*((struct in_addr *) h->h_name)));
+    printf("IP Address : %s\n", );
 
     return 0;
 }
