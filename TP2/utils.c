@@ -1,5 +1,36 @@
 #include "utils.h"
 
+//!GET_LINE
+
+char	*get_line(int fd)
+{
+	size_t	size = 1;
+	ssize_t	bytes = 1;
+	char	*line;
+	char	c;
+
+	line = calloc(1, size);
+	if (!line)
+		return (NULL);
+
+	while (bytes > 0 && !strchr(line, '\n'))
+	{
+		bytes = read(fd, &c, 1);
+		if (bytes == 0)
+			break ;
+		if (bytes == -1)
+		{
+			free(line);
+			return (NULL);
+		}
+		line = realloc(line, ++size);
+		line[size - 2] = c;
+		line[size - 1] = '\0';
+	}
+	return (line);
+}
+
+
 //!STRMAP
 
 char	*strmap(char const *s, char (*f)(unsigned int, char))

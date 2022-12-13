@@ -102,13 +102,35 @@ URL *parse_url(char *link)
 	return url;
 }
 
+int read_response(int fd)
+{
+	char	*line;
+	int		code;
+
+	while (line = get_line(fd))
+	{	
+		#ifdef DEBUG
+			printf("%s", line);
+		#endif
+
+		if (line[3] == ' ')
+		{
+			code = atoi(line);
+			free(line);
+			break;
+		}
+		free(line);
+	}
+	return code;
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 2)
 		print_usage(argv[0]);
 	
 	URL *url;
-	int sockfd;
+	int fd;
 
 	if (!(url = parse_url(argv[1])))
 	{
@@ -116,32 +138,38 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
+	
 	if (!(url->ip = getip(url->hostname)))
 	{
 		url_delete(url);
 		print_error("parse_hostname", "unknown hostname");
 	}
 
-	#ifdef DEBUG
-		url_print(url); 
-	#endif
+	url_print(url); 
 
-	if ((sockfd = socket_open(url)) < 0)
+	if ((fd = socket_open(url)) < 0)
 	{
 		url_delete(url);
 		print_error("socket_open", "Couldn't establish connection");
 	}
-	
-	char *buf = calloc(1000, 1);
-	read(sockfd, buf, 1000);
-	puts(buf);
-	
-	printf("File descriptor = %d\n", sockfd);
 
-	if ((sockfd = socket_close(sockfd)) < 0)
+	printf("\n\t/=\\_/=\\_/=\\_ Connection established. /=\\_/=\\_/=\\_\n\n");
+	int code = read_response(fd);
+	if (code != CODE_SERVICE_READY)
+	{
+		url_delete(url);
+		print_error("read_response", "Response code was not 220 (success code).");
+	}
+	#ifdef DEBUG
+		printf("Code response: %d\n", code);
+		printf("File descriptor = %d\n", fd);
+	#endif
+
+	if ((fd = socket_close(fd)) < 0)
 	{
 		url_delete(url);
 		print_error("socket_close", "Couldn't close connection");
 	}
-	
+	printf("\n\t/=\\_/=\\_/=\\_ Connection closed. /=\\_/=\\_/=\\_\n\n");
+	url_delete(url);
 }

@@ -31,12 +31,8 @@ void url_delete(URL *url)
 void url_print(URL *url)
 {
 	if (!url)
-	{
-		printf("\n\t======== NULL URL ========\n\n");
 		return ;
-	}
 
-	printf("\n\t======== ASSEMBLED URL ========\n\n");
 	printf("User: %s\n", url->user);
 	printf("Password: %s\n", url->password);
 	printf("Hostname: %s\n", url->hostname);
