@@ -1,4 +1,4 @@
-#include "download.h"
+#include "utils.h"
 #include "URL.h"
 
 #define DELIMITER '|'
@@ -26,7 +26,7 @@ char to_bar(unsigned int i, char c)
 
 //! URL Regular Expression: ftp://[<user>:<password>@]<host>/<url-path>
 
-char	*parse_hostname(char *hostname)
+char	*getip(char *hostname)
 {
 	struct hostent *h;
 	char *ip;
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	if (!(url->ip = parse_hostname(url->hostname)))
+	if (!(url->ip = getip(url->hostname)))
 	{
 		url_delete(url);
 		print_error("parse_hostname", "unknown hostname");
@@ -131,7 +131,11 @@ int main(int argc, char **argv)
 		url_delete(url);
 		print_error("socket_open", "Couldn't establish connection");
 	}
-
+	
+	char *buf = calloc(1000, 1);
+	read(sockfd, buf, 1000);
+	puts(buf);
+	
 	printf("File descriptor = %d\n", sockfd);
 
 	if ((sockfd = socket_close(sockfd)) < 0)
