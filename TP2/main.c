@@ -26,7 +26,7 @@ char to_bar(unsigned int i, char c)
 
 //! URL Regular Expression: ftp://[<user>:<password>@]<host>/<url-path>
 
-char *parse_hostname(char *hostname)
+char	*parse_hostname(char *hostname)
 {
 	struct hostent *h;
 	char *ip;
@@ -37,11 +37,11 @@ char *parse_hostname(char *hostname)
         return NULL;
     }
 	
-	ip = inet_ntoa(*((struct in_addr *) h->h_name));
+	ip = inet_ntoa(*((struct in_addr *) h->h_addr));
 	return ip;
 }
 
-int socket_open(URL *url)
+int	socket_open(URL *url)
 {
 	int fd;
     struct sockaddr_in server_addr;
