@@ -1,19 +1,20 @@
-#include "URL.h"
+#include "link.h"
 
-URL *url_new (char *user, char *password, char *hostname, char *path)
+Link *link_new (char *user, char *password, char *hostname, char *path)
 {
-	URL* url = malloc(sizeof(URL));
-	if (!url)
+	Link* link = malloc(sizeof(Link));
+	if (!link)
 		return NULL;
-	url->user = user;
-	url->password = password;
-	url->hostname = hostname;
-	url->path = path;
+	link->user = user;
+	link->password = password;
+	link->hostname = hostname;
+	link->path = path;
+	link->port = 0;
 
-	return url;
+	return link;
 }
 
-void url_delete(URL *url)
+void link_delete(Link *url)
 {
 	if (!url)
 		return ;
@@ -28,7 +29,7 @@ void url_delete(URL *url)
 	free(url);
 }
 
-void url_print(URL *url)
+void link_print(Link *url)
 {
 	if (!url)
 		return ;

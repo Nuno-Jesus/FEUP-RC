@@ -1,5 +1,5 @@
 #include "utils.h"
-#include "URL.h"
+#include "link.h"
 
 #define DELIMITER '|'
 
@@ -41,7 +41,7 @@ char	*getip(char *hostname)
 	return ip;
 }
 
-int	socket_open(URL *url)
+int	socket_open(Link *url)
 {
 	int fd;
     struct sockaddr_in server_addr;
@@ -80,7 +80,7 @@ int socket_close(int fd)
 	return 1;
 }
 
-URL *parse_url(char *link)
+Link *parse_url(char *link)
 {
 	if (strstr(link, "ftp://") != link)
 		print_error("parse_url", "missing \"ftp://\" at the beggining of the url");
@@ -89,17 +89,17 @@ URL *parse_url(char *link)
 	char *temp = strchr(dup , '/');
 	temp[0] = DELIMITER;
 	char **tokens = split(dup, DELIMITER);
-	URL *url;
+	Link *args;
 
 	if (strchr(link + 6, '@') && strchr(link + 6, ':'))
-		url = url_new(strdup(tokens[0]), strdup(tokens[1]), strdup(tokens[2]), strdup(tokens[3]));
+		args = link_new(strdup(tokens[0]), strdup(tokens[1]), strdup(tokens[2]), strdup(tokens[3]));
 	else
-		url = url_new(strdup("anonymous"), strdup("dummy"), strdup(tokens[0]), strdup(tokens[1]));
+		args = link_new(strdup("anonymous"), strdup("dummy"), strdup(tokens[0]), strdup(tokens[1]));
 
 	delete_matrix(tokens);
 	free(dup);
 
-	return url;
+	return args;
 }
 
 int read_response(int fd)
@@ -107,7 +107,7 @@ int read_response(int fd)
 	char	*line;
 	int		code;
 
-	while (line = get_line(fd))
+	while ((line = get_line(fd)))
 	{	
 		#ifdef DEBUG
 			printf("%s", line);
@@ -124,40 +124,78 @@ int read_response(int fd)
 	return code;
 }
 
+int send_command(char *command, int fd)
+{
+	if (write(fd, command, strlen(command)) == -1)
+		return 0;
+	return 1;
+}
+
+int request_login(int fd, Link* url)
+{
+	int	code;
+	char command[64];
+
+	memset(command, 0, 64);
+	sprintf(command, "user %s\n", url->user);
+	send_command(command, fd);
+	code = read_response(fd);
+
+	memset(command, 0, 64);
+	sprintf(command, "pass %s\n", url->password);
+	send_command(command, fd);
+	code = read_response(fd);
+
+	return code;
+}
+
+int request_passive_mode(int fd, Link *link)
+{	
+	(void)link;
+	char command[64];
+	int code;
+
+	memset(command, 0, 64);
+	sprintf(command, "pasv\n");
+	send_command(command, fd);
+	code = read_response(fd);
+
+	return code;
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 2)
 		print_usage(argv[0]);
 	
-	URL *url;
+	Link *link;
 	int fd;
 
-	if (!(url = parse_url(argv[1])))
+	if (!(link = parse_url(argv[1])))
 	{
 		perror("malloc()");
 		exit(EXIT_FAILURE);
 	}
 	
-	
-	if (!(url->ip = getip(url->hostname)))
+	if (!(link->ip = getip(link->hostname)))
 	{
-		url_delete(url);
+		link_delete(link);
 		print_error("parse_hostname", "unknown hostname");
 	}
 
-	url_print(url); 
+	link_print(link); 
 
-	if ((fd = socket_open(url)) < 0)
+	if ((fd = socket_open(link)) < 0)
 	{
-		url_delete(url);
+		link_delete(link);
 		print_error("socket_open", "Couldn't establish connection");
 	}
 
-	printf("\n\t/=\\_/=\\_/=\\_ Connection established. /=\\_/=\\_/=\\_\n\n");
+	printf("\n\t_/=\\_/=\\_/=\\_ Connection established. _/=\\_/=\\_/=\\_\n\n");
 	int code = read_response(fd);
 	if (code != CODE_SERVICE_READY)
 	{
-		url_delete(url);
+		link_delete(link);
 		print_error("read_response", "Response code was not 220 (success code).");
 	}
 	#ifdef DEBUG
@@ -165,11 +203,15 @@ int main(int argc, char **argv)
 		printf("File descriptor = %d\n", fd);
 	#endif
 
+	request_login(fd, link);
+	request_passive_mode(fd, link);
+
 	if ((fd = socket_close(fd)) < 0)
 	{
-		url_delete(url);
+		link_delete(link);
 		print_error("socket_close", "Couldn't close connection");
 	}
-	printf("\n\t/=\\_/=\\_/=\\_ Connection closed. /=\\_/=\\_/=\\_\n\n");
-	url_delete(url);
+
+	printf("\n\t_/=\\_/=\\_/=\\_ Connection closed. _/=\\_/=\\_/=\\_\n\n");
+	link_delete(link);
 }

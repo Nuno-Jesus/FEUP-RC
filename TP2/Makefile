@@ -2,14 +2,14 @@
 CC = cc
 
 #_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ FLAGS _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
-CFLAGS = 
+CFLAGS = -Wall -Wextra -Werror
 MKFLAGS = --no-print-directory
 
 #_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ FOLDERS _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
 DEPS = .
 
 #_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ FILES _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
-TARGET = utils.o URL.o
+TARGET = utils.o link.o
 NAME = download
 MAIN = main.c
 
