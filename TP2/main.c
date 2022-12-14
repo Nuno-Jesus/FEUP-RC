@@ -153,12 +153,30 @@ int request_passive_mode(int fd, Link *link)
 {	
 	(void)link;
 	char command[64];
-	int code;
+	int code = 0;
 
 	memset(command, 0, 64);
 	sprintf(command, "pasv\n");
 	send_command(command, fd);
-	code = read_response(fd);
+	//Get the response line
+	char *line = get_line(fd);
+
+	//Use a new string to retrive the (xxx, xxx, xxx,...) part of the string
+	char *tmp = strtrim(strchr(line, '('), "().\n\r");
+
+	char **tokens = split(tmp, ',');
+	
+	
+	link->port = atoi(tokens[4]) * 256 + atoi(tokens[5]);
+	#ifdef DEBUG
+		for(int i = 0; tokens[i]; i++)
+			puts(tokens[i]);
+		printf("Port: %ld\n", link->port);
+	#endif
+
+	delete_matrix(tokens);
+	free(tmp);
+	free(line);
 
 	return code;
 }

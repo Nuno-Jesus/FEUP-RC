@@ -3,6 +3,8 @@
 
 #include "macros.h"
 
+char	*strtrim(char const *s1, char const *set);
+
 char	**split(char const *s, char c);
 
 char	*get_line(int fd);
