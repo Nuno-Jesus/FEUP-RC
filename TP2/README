@@ -1,0 +1,30 @@
+
+                     This is the ftp distribution of
+
+                           The KDE Project 
+                          http://www.kde.org/
+                
+
+-------------------------------------------------------------------------------
+
+Please note:
+
+- The latest stable version of the KDE base distribution
+  can be found in the 'stable' subdirectory. 
+   
+- You can find a plethora of KDE applications in the 'stable' as 
+  well as 'unstable' subdirectories of this ftp server. 
+
+  The author of an application determines whether his/her application
+  is placed under the 'stable' or 'unstable' directory tree. The
+  KDE Project itself does not in any way judge the quality or
+  stability of a particular program. In general programs in the stable
+  hirarchy are supposed to work with the latest stable version of the 
+  KDE base distribution.
+                        
+- You are welcome to upload contributions to 
+
+  ftp://upload.kde.org/incoming
+
+-- 
+Your Friendly ftp.kde.org Archive Maintainers <ftpadmin@kde.org>

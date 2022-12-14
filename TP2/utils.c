@@ -42,6 +42,11 @@ char	*get_line(int fd)
 		line[size - 2] = c;
 		line[size - 1] = '\0';
 	}
+	if (line[0] == '\0')
+	{
+		free(line);
+		return NULL;
+	}
 	return (line);
 }
 

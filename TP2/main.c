@@ -41,7 +41,7 @@ char	*getip(char *hostname)
 	return ip;
 }
 
-int	socket_open(Link *url)
+int	socket_open(Link *url, int port)
 {
 	int fd;
     struct sockaddr_in server_addr;
@@ -50,7 +50,7 @@ int	socket_open(Link *url)
     memset((char *) &server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = inet_addr(url->ip); 
-    server_addr.sin_port = htons(21);     
+    server_addr.sin_port = htons(port);     
 
     /*open a TCP socket*/
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -107,8 +107,11 @@ int read_response(int fd)
 	char	*line;
 	int		code;
 
-	while ((line = get_line(fd)))
+	while (1)
 	{	
+		line = get_line(fd);
+		if (!line)
+			break;
 		#ifdef DEBUG
 			printf("%s", line);
 		#endif
@@ -126,6 +129,7 @@ int read_response(int fd)
 
 int send_command(char *command, int fd)
 {
+	printf("> Sending \'%s\'", command);
 	if (write(fd, command, strlen(command)) == -1)
 		return 0;
 	return 1;
@@ -164,13 +168,12 @@ int request_passive_mode(int fd, Link *link)
 	//Use a new string to retrive the (xxx, xxx, xxx,...) part of the string
 	char *tmp = strtrim(strchr(line, '('), "().\n\r");
 
+	//Split the numbers by the ','
 	char **tokens = split(tmp, ',');
 	
 	
 	link->port = atoi(tokens[4]) * 256 + atoi(tokens[5]);
 	#ifdef DEBUG
-		for(int i = 0; tokens[i]; i++)
-			puts(tokens[i]);
 		printf("Port: %ld\n", link->port);
 	#endif
 
@@ -179,6 +182,49 @@ int request_passive_mode(int fd, Link *link)
 	free(line);
 
 	return code;
+}
+
+int request_file(int fd, Link *link)
+{
+	char command[64];
+	int code = 0;
+
+	memset(command, 0, 64);
+	sprintf(command, "retr %s\n", link->path);
+	send_command(command, fd);
+
+	return code;
+}
+
+char *get_filename(Link *link)
+{
+	char *filename;
+
+	filename = strrchr(link->path, '/');
+	filename = filename == NULL ? link->path : filename + 1;
+
+	return filename;
+}	
+
+int receive_file(int fd, char *filename)
+{
+	char *line;
+	int fd2 = open(filename, O_WRONLY | O_CREAT);
+
+	while (1)
+	{	
+		line = get_line(fd);
+		if (!line)
+			break;
+		write(fd2, line, strlen(line));
+		#ifdef DEBUG
+			printf("%s", line);
+		#endif
+
+		free(line);
+	}
+	close(fd2);
+	return 1;
 }
 
 int main(int argc, char **argv)
@@ -203,26 +249,50 @@ int main(int argc, char **argv)
 
 	link_print(link); 
 
-	if ((fd = socket_open(link)) < 0)
+	if ((fd = socket_open(link, 21)) < 0)
 	{
 		link_delete(link);
 		print_error("socket_open", "Couldn't establish connection");
 	}
+	
 
 	printf("\n\t_/=\\_/=\\_/=\\_ Connection established. _/=\\_/=\\_/=\\_\n\n");
+	
 	int code = read_response(fd);
 	if (code != CODE_SERVICE_READY)
 	{
 		link_delete(link);
 		print_error("read_response", "Response code was not 220 (success code).");
 	}
-	#ifdef DEBUG
-		printf("Code response: %d\n", code);
-		printf("File descriptor = %d\n", fd);
-	#endif
 
 	request_login(fd, link);
 	request_passive_mode(fd, link);
+
+	//############# OPEN THE SOCKET TO TRANSFER THE FILE #########################
+
+	int fd2;
+
+	if ((fd2 = socket_open(link, link->port)) < 0)
+	{
+		link_delete(link);
+		print_error("socket_open", "Couldn't establish connection");
+	}
+
+	request_file(fd, link);
+	char *filename = get_filename(link);
+	
+	#ifdef DEBUG
+		puts(filename);
+	#endif
+	receive_file(fd2, filename);
+
+	if ((fd2 = socket_close(fd2)) < 0)
+	{
+		link_delete(link);
+		print_error("socket_close", "Couldn't close connection");
+	}
+
+	//#######################################################
 
 	if ((fd = socket_close(fd)) < 0)
 	{
