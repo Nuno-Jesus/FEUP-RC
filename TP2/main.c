@@ -184,16 +184,24 @@ int request_passive_mode(int fd, Link *link)
 	return code;
 }
 
-int request_file(int fd, Link *link)
+size_t request_file(int fd, Link *link)
 {
 	char command[64];
-	int code = 0;
-
+	size_t filesize = 0;
+	
 	memset(command, 0, 64);
 	sprintf(command, "retr %s\n", link->path);
 	send_command(command, fd);
 
-	return code;
+	char *line = get_line(fd);
+	#ifdef DEBUG
+		printf("Line: %s", line);
+		printf("Filesize: %ld\n", filesize);
+	#endif
+	
+	filesize = atoi(strchr(line, '('));
+	
+	return filesize;
 }
 
 char *get_filename(Link *link)
@@ -206,23 +214,13 @@ char *get_filename(Link *link)
 	return filename;
 }	
 
-int receive_file(int fd, char *filename)
+int receive_file(int fd, char *filename, size_t filesize)
 {
-	char *line;
+	char *line = malloc(filesize);
 	int fd2 = open(filename, O_WRONLY | O_CREAT);
 
-	while (1)
-	{	
-		line = get_line(fd);
-		if (!line)
-			break;
-		write(fd2, line, strlen(line));
-		#ifdef DEBUG
-			printf("%s", line);
-		#endif
-
-		free(line);
-	}
+	read(fd, line, filesize);
+	write(fd2, line, filesize);
 	close(fd2);
 	return 1;
 }
@@ -278,13 +276,13 @@ int main(int argc, char **argv)
 		print_error("socket_open", "Couldn't establish connection");
 	}
 
-	request_file(fd, link);
+	size_t filesize = request_file(fd, link);
 	char *filename = get_filename(link);
 	
 	#ifdef DEBUG
 		puts(filename);
 	#endif
-	receive_file(fd2, filename);
+	receive_file(fd2, filename, filesize);
 
 	if ((fd2 = socket_close(fd2)) < 0)
 	{
