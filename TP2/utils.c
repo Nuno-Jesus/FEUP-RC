@@ -20,3 +20,13 @@ char to_bar(unsigned int i, char c)
 		return DELIMITER;
 	return c;
 }
+
+char *get_filename(char *path)
+{
+	char *filename;
+
+	filename = strrchr(path, '/');
+	filename = filename == NULL ? path : filename + 1;
+
+	return filename;
+}	

@@ -9,4 +9,6 @@ void	print_error(char *func, char *message);
 
 char	to_bar(unsigned int i, char c);
 
+char	*get_filename(char *path);
+
 #endif
