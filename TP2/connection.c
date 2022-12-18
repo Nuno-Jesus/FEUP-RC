@@ -116,13 +116,15 @@ int request_passive_mode(int fd, Link *link)
 size_t request_file(int fd, Link *link)
 {
 	size_t filesize = 0;
+	char *line;
 	
 	send_command("RETR ", link->path, fd, link->port);
 
-	char *line = get_line(fd);
+	line = get_line(fd);
 	printf("%s", line);
-
+	
 	filesize = atoi(strchr(line, '(') + 1);
+	free(line);
 
 	return filesize;
 }
@@ -137,6 +139,7 @@ int receive_file(int fd, char *filename, size_t filesize)
 	write(fd2, line, filesize);
 	printf("\n> %sTransfer complete.%s\n", BMAGENTA, RESET);
 
+	free(line);
 	close(fd2);
 	return 1;
 }

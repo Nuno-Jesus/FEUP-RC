@@ -2,11 +2,12 @@
 
 char	*strtrim(char const *s1, char const *set)
 {
+	if (!s1 || !set)
+		return (NULL);
+		
 	size_t	end;
 	size_t	start;
 
-	if (!s1 || !set)
-		return (NULL);
 	start = 0;
 	end = strlen(s1);
 	while (strchr(set, s1[start]) && s1[start])
@@ -24,8 +25,7 @@ char	*get_line(int fd)
 	char	*line;
 	char	c;
 
-	line = calloc(1, size);
-	if (!line)
+	if (!(line = calloc(1, size)))
 		return (NULL);
 
 	while (bytes > 0 && !strchr(line, '\n'))
@@ -55,21 +55,19 @@ char	*get_line(int fd)
 
 char	*strmap(char const *s, char (*f)(unsigned int, char))
 {
+	if (!s || !f)
+		return (NULL);
+
 	char	*mapped;
 	size_t	i;
 
-	if (!s || !f)
+	if (!(mapped = malloc(strlen(s) + 1)))
 		return (NULL);
-	i = 0;
-	mapped = (char *)malloc(strlen(s) + 1);
-	if (!mapped)
-		return (NULL);
-	while (s[i])
-	{
+		
+	for (i = 0; s[i]; i++)
 		mapped[i] = f(i, s[i]);
-		i++;
-	}
 	mapped[i] = '\0';
+
 	return (mapped);
 }
 
@@ -104,7 +102,7 @@ int	count_words(char const *s, char delim)
 	return (n);
 }
 
-void	*delete_matrix(char **mat)
+void	delete_matrix(char **mat)
 {
 	int	i;
 
@@ -112,31 +110,30 @@ void	*delete_matrix(char **mat)
 	while (mat[i])
 		free(mat[i++]);
 	free(mat);
-	return (NULL);
 }
 
 char	**split(char const *s, char c)
 {
-	size_t	i;
-	int		k;
-	int		num;
-	char	**words;
-
 	if (!s)
 		return (NULL);
-	i = 0;
-	k = -1;
-	num = count_words(s, c);
-	words = (char **)malloc((num + 1) * sizeof(char *));
-	if (!words)
+
+	char **words;
+	size_t i = 0;
+	int	num = count_words(s, c);
+
+	if (!(words = malloc((num + 1) * sizeof(char *))))
 		return (NULL);
-	while (++k < num)
+
+	for (int k = 0; k < num; k++)
 	{
 		while (s[i] == c)
 			i++;
 		words[k] = substr(s, i, strlen_delim(s + i, c));
 		if (!words[k])
-			return (delete_matrix(words));
+		{
+			delete_matrix(words);
+			return (NULL);
+		}
 		i += strlen_delim(s + i, c);
 	}
 	words[num] = NULL;
@@ -146,15 +143,15 @@ char	**split(char const *s, char c)
 //! SUBSTR
 char	*substr(char const *s, unsigned int start, size_t len)
 {
-	size_t	i;
-	char	*res;
-
 	if (!s)
 		return (NULL);
-	i = 0;
-	res = (char *)malloc(len + 1);
-	if (res == NULL)
+
+	size_t	i = 0;
+	char	*res;
+
+	if (!(res = malloc(len + 1)))
 		return (NULL);
+
 	if (start <= strlen(s))
 	{
 		while (i < len && s[i + start])
