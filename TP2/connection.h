@@ -16,10 +16,10 @@ int		read_response(int fd);
 
 int		request_login(int fd, Link* url);
 
-int		request_passive_mode(int fd, Link *link);
+int		passive_mode(int fd, Link *link);
 
-size_t	request_file(int fd, Link *link);
+size_t	retrieve_file(int fd, Link *link);
 
-int		receive_file(int fd, char *filename, size_t filesize);
+int		download(int fd, char *filename, size_t filesize);
 
 #endif

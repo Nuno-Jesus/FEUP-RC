@@ -75,7 +75,7 @@ int read_response(int fd)
 	return code;
 }
 
-int request_login(int fd, Link* url)
+int login(int fd, Link* url)
 {
 	int	code;
 
@@ -88,7 +88,7 @@ int request_login(int fd, Link* url)
 	return code;
 }
 
-int request_passive_mode(int fd, Link *link)
+int passive_mode(int fd, Link *link)
 {	
 	int code = 0;
 
@@ -113,7 +113,7 @@ int request_passive_mode(int fd, Link *link)
 	return code;
 }
 
-size_t request_file(int fd, Link *link)
+size_t retrieve_file(int fd, Link *link)
 {
 	size_t filesize = 0;
 	char *line;
@@ -134,12 +134,12 @@ size_t request_file(int fd, Link *link)
 	return filesize;
 }
 
-int receive_file(int fd, char *filename, size_t filesize)
+int download(int fd, char *filename, size_t filesize)
 {
 	unsigned char *line = malloc(READ_MAX + 1);
 	int fd2 = open(filename, O_WRONLY | O_CREAT);
 
-	printf("\n> Initiating %s\'%s\'%s transfer...", BYELLOW, filename, RESET);
+	printf("\n> Dowloading %s\'%s\'%s...", BYELLOW, filename, RESET);
 	for (size_t i = 0; i < filesize; i += READ_MAX)
 	{
 		ssize_t bytes = read(fd, line, READ_MAX);
@@ -148,7 +148,7 @@ int receive_file(int fd, char *filename, size_t filesize)
 		line[bytes] = 0;
 		write(fd2, line, bytes);
 	}
-	printf("\n> %sTransfer complete.%s\n", BMAGENTA, RESET);
+	printf("\n> %sDownload complete.%s\n", BCYAN, RESET);
 
 	free(line);
 	close(fd2);

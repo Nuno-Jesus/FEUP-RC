@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 	}
 
 	request_login(fd, link);
-	request_passive_mode(fd, link);
+	passive_mode(fd, link);
 
 	//############# OPEN THE SOCKET TO TRANSFER THE FILE #########################
 
@@ -85,10 +85,10 @@ int main(int argc, char **argv)
 		print_error("socket_open", "Couldn't establish connection");
 	}
 
-	size_t filesize = request_file(fd, link);
+	size_t filesize = retrieve_file(fd, link);
 	char *filename = get_filename(link->path);
 	
-	receive_file(fd2, filename, filesize);
+	download(fd2, filename, filesize);
 
 	if ((fd2 = socket_close(fd2)) < 0)
 	{
