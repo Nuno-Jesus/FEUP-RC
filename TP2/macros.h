@@ -34,6 +34,7 @@
 #define BWHITE "\033[1m\033[37m" 
 
 #define FTP_PORT 21
+#define READ_MAX 1024
 
 #define CODE_SERVICE_READY 220
 #define CODE_NEED_USER 503

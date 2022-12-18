@@ -50,9 +50,7 @@ char	*get_line(int fd)
 	return (line);
 }
 
-
 //!STRMAP
-
 char	*strmap(char const *s, char (*f)(unsigned int, char))
 {
 	if (!s || !f)

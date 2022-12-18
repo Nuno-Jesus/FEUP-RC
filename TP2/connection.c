@@ -118,6 +118,11 @@ size_t request_file(int fd, Link *link)
 	size_t filesize = 0;
 	char *line;
 	
+	send_command("TYPE ", "I", fd, link->port);
+
+	line = get_line(fd);
+	printf("%s", line);
+
 	send_command("RETR ", link->path, fd, link->port);
 
 	line = get_line(fd);
@@ -131,12 +136,18 @@ size_t request_file(int fd, Link *link)
 
 int receive_file(int fd, char *filename, size_t filesize)
 {
-	char *line = malloc(filesize);
+	unsigned char *line = malloc(READ_MAX + 1);
 	int fd2 = open(filename, O_WRONLY | O_CREAT);
 
 	printf("\n> Initiating %s\'%s\'%s transfer...", BYELLOW, filename, RESET);
-	read(fd, line, filesize);
-	write(fd2, line, filesize);
+	for (size_t i = 0; i < filesize; i += READ_MAX)
+	{
+		ssize_t bytes = read(fd, line, READ_MAX);
+		if (bytes == -1)
+			break;
+		line[bytes] = 0;
+		write(fd2, line, bytes);
+	}
 	printf("\n> %sTransfer complete.%s\n", BMAGENTA, RESET);
 
 	free(line);
