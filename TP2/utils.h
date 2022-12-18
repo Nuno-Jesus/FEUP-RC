@@ -3,16 +3,10 @@
 
 #include "macros.h"
 
-char	*strtrim(char const *s1, char const *set);
+void	print_usage(char *command);
 
-char	**split(char const *s, char c);
+void	print_error(char *func, char *message);
 
-char	*get_line(int fd);
-
-char	*substr(char const *s, unsigned int start, size_t len);
-
-char	*strmap(char const *s, char (*f)(unsigned int, char));
-
-void	*delete_matrix(char **mat);
+char	to_bar(unsigned int i, char c);
 
 #endif

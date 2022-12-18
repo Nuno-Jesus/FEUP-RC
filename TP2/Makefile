@@ -9,7 +9,7 @@ MKFLAGS = --no-print-directory
 DEPS = .
 
 #_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ FILES _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
-TARGET = utils.o link.o
+TARGET = utils.o link.o str.o
 NAME = download
 MAIN = main.c
 

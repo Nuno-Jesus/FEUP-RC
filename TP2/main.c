@@ -1,28 +1,6 @@
 #include "utils.h"
+#include "str.h"
 #include "link.h"
-
-#define DELIMITER '|'
-
-void print_usage(char *command)
-{
-	printf("Usage: %s URL\n", command);
-	exit(EXIT_FAILURE);
-}
-
-void print_error(char *func, char *message)
-{
-	printf("%s(): %s\n", func, message);
-	exit(EXIT_FAILURE);
-}
-
-char to_bar(unsigned int i, char c)
-{
-	(void)i;
-
-	if (c == '@' || c == ':')
-		return DELIMITER;
-	return c;
-}
 
 //! URL Regular Expression: ftp://[<user>:<password>@]<host>/<url-path>
 
@@ -211,7 +189,6 @@ int receive_file(int fd, char *filename, size_t filesize)
 	int fd2 = open(filename, O_WRONLY | O_CREAT);
 
 	read(fd, line, filesize);
-	puts(line);
 	write(fd2, line, filesize);
 	close(fd2);
 	return 1;
