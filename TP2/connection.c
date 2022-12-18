@@ -39,13 +39,14 @@ int socket_close(int fd)
 	return 1;
 }
 
-void send_command(char *command, char *arg, int fd)
+void send_command(char *command, char *arg, int fd, int port)
 {
 	char buffer[64];
 
 	memset(buffer, 0, 64);
-	sprintf(buffer, "%s %s\n", command, arg);
-	printf("> Sending command \'%s %s\'\n", command, arg);
+	sprintf(buffer, "%s%s\n", command, arg);
+	printf("\n> Sending command %s\'%s%s\'%s to port %s%d%s\n", 
+		BYELLOW, command, arg, RESET, BYELLOW, port, RESET);
 
 	write(fd, buffer, strlen(buffer));
 }
@@ -61,10 +62,8 @@ int read_response(int fd)
 		line = get_line(fd);
 		if (!line)
 			break;
-		#ifdef DEBUG
-			printf("%s", line);
-		#endif
 
+		printf("%s", line);
 		if (line[3] == ' ')
 		{
 			code = atoi(line);
@@ -76,15 +75,14 @@ int read_response(int fd)
 	return code;
 }
 
-
 int request_login(int fd, Link* url)
 {
 	int	code;
 
-	send_command("USER", url->user, fd);
+	send_command("USER ", url->user, fd, FTP_PORT);
 	code = read_response(fd);
 
-	send_command("PASS", url->password, fd);
+	send_command("PASS ", url->password, fd, FTP_PORT);
 	code = read_response(fd);
 
 	return code;
@@ -94,10 +92,11 @@ int request_passive_mode(int fd, Link *link)
 {	
 	int code = 0;
 
-	send_command("PASV", "", fd);
+	send_command("PASV", "", fd, FTP_PORT);
 
 	//Get the response line
 	char *line = get_line(fd);
+	printf("%s", line);
 
 	//Use a new string to retrive the (xxx, xxx, xxx,...) part of the string
 	char *tmp = strtrim(strchr(line, '('), "().\n\r");
@@ -106,9 +105,6 @@ int request_passive_mode(int fd, Link *link)
 	char **tokens = split(tmp, ',');
 	
 	link->port = atoi(tokens[4]) * 256 + atoi(tokens[5]);
-	#ifdef DEBUG
-		printf("Port: %ld\n", link->port);
-	#endif
 
 	delete_matrix(tokens);
 	free(tmp);
@@ -121,9 +117,11 @@ size_t request_file(int fd, Link *link)
 {
 	size_t filesize = 0;
 	
-	send_command("RETR", link->path, fd);
+	send_command("RETR ", link->path, fd, link->port);
 
 	char *line = get_line(fd);
+	printf("%s", line);
+
 	filesize = atoi(strchr(line, '(') + 1);
 
 	return filesize;
@@ -134,8 +132,11 @@ int receive_file(int fd, char *filename, size_t filesize)
 	char *line = malloc(filesize);
 	int fd2 = open(filename, O_WRONLY | O_CREAT);
 
+	printf("\n> Initiating %s\'%s\'%s transfer...", BYELLOW, filename, RESET);
 	read(fd, line, filesize);
 	write(fd2, line, filesize);
+	printf("\n> %sTransfer complete.%s\n", BMAGENTA, RESET);
+
 	close(fd2);
 	return 1;
 }

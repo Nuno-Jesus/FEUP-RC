@@ -10,7 +10,7 @@ int		socket_open(Link *url, int port);
 
 int		socket_close(int fd);
 
-void	send_command(char *command, char *arg, int fd);
+void	send_command(char *command, char *arg, int fd, int port);
 
 int		read_response(int fd);
 

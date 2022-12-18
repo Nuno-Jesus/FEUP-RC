@@ -57,14 +57,13 @@ int main(int argc, char **argv)
 	
 	link_print(link); 
 
-	if ((fd = socket_open(link, 21)) < 0)
+	if ((fd = socket_open(link, FTP_PORT)) < 0)
 	{
 		link_delete(link);
 		print_error("socket_open", "Couldn't establish connection");
 	}
 	
-
-	printf("\n\t_/=\\_/=\\_/=\\_ Connection established. _/=\\_/=\\_/=\\_\n\n");
+	printf("\n\t%s_/=\\_/=\\_/=\\_ Connection established. _/=\\_/=\\_/=\\_%s\n\n", BYELLOW, RESET);
 	
 	int code = read_response(fd);
 	if (code != CODE_SERVICE_READY)
@@ -89,9 +88,6 @@ int main(int argc, char **argv)
 	size_t filesize = request_file(fd, link);
 	char *filename = get_filename(link->path);
 	
-	#ifdef DEBUG
-		puts(filename);
-	#endif
 	receive_file(fd2, filename, filesize);
 
 	if ((fd2 = socket_close(fd2)) < 0)
@@ -108,6 +104,6 @@ int main(int argc, char **argv)
 		print_error("socket_close", "Couldn't close connection");
 	}
 
-	printf("\n\t_/=\\_/=\\_/=\\_ Connection closed. _/=\\_/=\\_/=\\_\n\n");
+	printf("\n\t%s_/=\\_/=\\_/=\\_ Connection closed. _/=\\_/=\\_/=\\_%s\n\n", BYELLOW, RESET);
 	link_delete(link);
 }
