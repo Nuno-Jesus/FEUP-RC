@@ -127,27 +127,25 @@ int read_response(int fd)
 	return code;
 }
 
-int send_command(char *command, int fd)
+void send_command(char *command, char *arg, int fd)
 {
-	printf("> Sending \'%s\'", command);
-	if (write(fd, command, strlen(command)) == -1)
-		return 0;
-	return 1;
+	char buffer[64];
+
+	memset(buffer, 0, 64);
+	sprintf(buffer, "%s %s\n", command, arg);
+	printf("> Sending command \'%s %s\'\n", command, arg);
+
+	write(fd, buffer, strlen(buffer));
 }
 
 int request_login(int fd, Link* url)
 {
 	int	code;
-	char command[64];
 
-	memset(command, 0, 64);
-	sprintf(command, "user %s\n", url->user);
-	send_command(command, fd);
+	send_command("USER", url->user, fd);
 	code = read_response(fd);
 
-	memset(command, 0, 64);
-	sprintf(command, "pass %s\n", url->password);
-	send_command(command, fd);
+	send_command("PASS", url->password, fd);
 	code = read_response(fd);
 
 	return code;
@@ -155,13 +153,10 @@ int request_login(int fd, Link* url)
 
 int request_passive_mode(int fd, Link *link)
 {	
-	(void)link;
-	char command[64];
 	int code = 0;
 
-	memset(command, 0, 64);
-	sprintf(command, "pasv\n");
-	send_command(command, fd);
+	send_command("PASV", "", fd);
+
 	//Get the response line
 	char *line = get_line(fd);
 
@@ -170,7 +165,6 @@ int request_passive_mode(int fd, Link *link)
 
 	//Split the numbers by the ','
 	char **tokens = split(tmp, ',');
-	
 	
 	link->port = atoi(tokens[4]) * 256 + atoi(tokens[5]);
 	#ifdef DEBUG
@@ -186,21 +180,18 @@ int request_passive_mode(int fd, Link *link)
 
 size_t request_file(int fd, Link *link)
 {
-	char command[64];
 	size_t filesize = 0;
 	
-	memset(command, 0, 64);
-	sprintf(command, "retr %s\n", link->path);
-	send_command(command, fd);
+	send_command("RETR", link->path, fd);
 
 	char *line = get_line(fd);
+	filesize = atoi(strchr(line, '(') + 1);
+	
 	#ifdef DEBUG
 		printf("Line: %s", line);
 		printf("Filesize: %ld\n", filesize);
 	#endif
-	
-	filesize = atoi(strchr(line, '('));
-	
+
 	return filesize;
 }
 
@@ -220,6 +211,7 @@ int receive_file(int fd, char *filename, size_t filesize)
 	int fd2 = open(filename, O_WRONLY | O_CREAT);
 
 	read(fd, line, filesize);
+	puts(line);
 	write(fd2, line, filesize);
 	close(fd2);
 	return 1;
