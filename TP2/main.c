@@ -19,6 +19,16 @@ char *getip(char *hostname)
 
 Link *parse_url(char *link)
 {
+	regex_t regex;
+
+	regcomp(&regex, "ftp://(.*:.*@)?$", 0);
+	int status = regexec(&regex, link, 0, NULL, 0);
+
+	if (!status)
+		puts("Match!");
+	else if (status == REG_NOMATCH)
+		puts("Not match");
+
 	if (strstr(link, "ftp://") != link)
 		print_error("parse_url", "missing \"ftp://\" at the beggining of the url");
 
@@ -35,6 +45,8 @@ Link *parse_url(char *link)
 
 	if (args)
 		args->ip = getip(args->hostname);
+	
+	regfree(&regex);
 	delete_matrix(tokens);
 	free(dup);
 
@@ -46,8 +58,9 @@ int main(int argc, char **argv)
 	if (argc != 2)
 		print_usage(argv[0]);
 	
-	Link *link;
 	int fd;
+	Link *link;
+	char *response;
 
 	if (!(link = parse_url(argv[1])))
 	{
@@ -65,45 +78,34 @@ int main(int argc, char **argv)
 	
 	printf("\n\t%s_/=\\_/=\\_/=\\_ Connection established. _/=\\_/=\\_/=\\_%s\n\n", BYELLOW, RESET);
 	
-	int code = read_response(fd);
+	response = read_response(fd);
+	int code = atoi(response);
+	free(response);
+
 	if (code != CODE_SERVICE_READY)
 	{
 		link_delete(link);
 		print_error("read_response", "Response code was not 220 (success code).");
 	}
 
-	login(fd, link);
-	passive_mode(fd, link);
-
-	//############# OPEN THE SOCKET TO TRANSFER THE FILE #########################
-
-	int fd2;
-
-	if ((fd2 = socket_open(link, link->port)) < 0)
+	if (!login(fd, link))
 	{
 		link_delete(link);
-		print_error("socket_open", "Couldn't establish connection");
+		print_error("login", "Login error");
 	}
 
-	size_t filesize = retrieve_file(fd, link);
-	char *filename = get_filename(link->path);
-	
-	download(fd2, filename, filesize);
-
-	if ((fd2 = socket_close(fd2)) < 0)
+	if (!passive_mode(fd, link))
 	{
 		link_delete(link);
-		print_error("socket_close", "Couldn't close connection");
+		print_error("passive_mode", "Whats");
 	}
 
-	//#######################################################
+	download(link, get_filename(link->path), fd);
+
+	link_delete(link);
 
 	if ((fd = socket_close(fd)) < 0)
-	{
-		link_delete(link);
 		print_error("socket_close", "Couldn't close connection");
-	}
 
 	printf("\n\t%s_/=\\_/=\\_/=\\_ Connection closed. _/=\\_/=\\_/=\\_%s\n\n", BYELLOW, RESET);
-	link_delete(link);
 }

@@ -14,6 +14,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <regex.h>
+
 #define BLACK "\033[30" 
 #define RED "\033[31" 
 #define GREEN "\033[32" 
@@ -37,8 +39,11 @@
 #define READ_MAX 1024
 
 #define CODE_SERVICE_READY 220
+#define CODE_LOGIN_SUCCESSFUL 230
+
 #define CODE_NEED_USER 503
 #define CODE_NO_LOGIN 530
+#define CODE_WRONG_FILE 550
 
 #define DELIMITER '|'
 

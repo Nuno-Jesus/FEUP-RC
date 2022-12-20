@@ -52,10 +52,9 @@ void send_command(char *command, char *arg, int fd, int port)
 }
 
 
-int read_response(int fd)
+char *read_response(int fd)
 {
 	char	*line;
-	int		code;
 
 	while (1)
 	{	
@@ -65,38 +64,52 @@ int read_response(int fd)
 
 		printf("%s", line);
 		if (line[3] == ' ')
-		{
-			code = atoi(line);
-			free(line);
 			break;
-		}
 		free(line);
 	}
-	return code;
+	return line;
 }
 
 int login(int fd, Link* url)
 {
-	int	code;
+	char *response;
 
 	send_command("USER ", url->user, fd, FTP_PORT);
-	code = read_response(fd);
-
+	response = read_response(fd);
+	if (!strstr(response, "Please specify the password"))
+	{
+		printf("\n\t%sUnknown user%s\n\n", BRED, RESET);
+		free(response);
+		return 0;
+	}
+	free(response);
+	
 	send_command("PASS ", url->password, fd, FTP_PORT);
-	code = read_response(fd);
-
-	return code;
+	response = read_response(fd);
+	if (atoi(response) != CODE_LOGIN_SUCCESSFUL)
+	{
+		printf("\n\t%sWrong password%s\n\n", BRED, RESET);
+		free(response);
+		return 0;
+	}
+	free(response);
+	return 1;
 }
 
 int passive_mode(int fd, Link *link)
 {	
-	int code = 0;
-
 	send_command("PASV", "", fd, FTP_PORT);
 
 	//Get the response line
 	char *line = get_line(fd);
 	printf("%s", line);
+
+	if (atoi(line) == CODE_WRONG_FILE)
+	{
+		free(line);
+		printf("\n\t%sNo such file.%s\n\n", BRED, RESET);
+		return 0;
+	}
 
 	//Use a new string to retrive the (xxx, xxx, xxx,...) part of the string
 	char *tmp = strtrim(strchr(line, '('), "().\n\r");
@@ -110,10 +123,10 @@ int passive_mode(int fd, Link *link)
 	free(tmp);
 	free(line);
 
-	return code;
+	return 1;
 }
 
-size_t retrieve_file(int fd, Link *link)
+size_t request_file(int fd, Link *link)
 {
 	size_t filesize = 0;
 	char *line;
@@ -134,23 +147,52 @@ size_t retrieve_file(int fd, Link *link)
 	return filesize;
 }
 
-int download(int fd, char *filename, size_t filesize)
+int download(Link *link, char *filename, int ftp_fd)
 {
-	unsigned char *line = malloc(READ_MAX + 1);
-	int fd2 = open(filename, O_WRONLY | O_CREAT);
+	int filefd;
+	int sockfd;
+	char *line;
+	size_t filesize;
+
+	//######################### OPEN THE SOCKET TO TRANSFER THE FILE #########################
+
+	if ((sockfd = socket_open(link, link->port)) < 0)
+	{
+		link_delete(link);
+		print_error("socket_open", "Couldn't establish connection");
+	}
+
+	filesize = request_file(ftp_fd, link);
+
+	filefd = open(filename, O_WRONLY | O_CREAT);
+	if (!(line = malloc(READ_MAX + 1)))
+	{
+		close(filefd);
+		return (0);
+	}
 
 	printf("\n> Dowloading %s\'%s\'%s...", BYELLOW, filename, RESET);
 	for (size_t i = 0; i < filesize; i += READ_MAX)
 	{
-		ssize_t bytes = read(fd, line, READ_MAX);
+		ssize_t bytes = read(sockfd, line, READ_MAX);
+		printf("%s", line);
 		if (bytes == -1)
 			break;
 		line[bytes] = 0;
-		write(fd2, line, bytes);
+		write(filefd, line, bytes);
 	}
 	printf("\n> %sDownload complete.%s\n", BCYAN, RESET);
 
+	//################################### CLOSE THE SOCKET ###################################
+
 	free(line);
-	close(fd2);
+	close(filefd);
+
+	if ((sockfd = socket_close(sockfd)) < 0)
+	{
+		link_delete(link);
+		print_error("socket_close", "Couldn't close connection");
+	}
+
 	return 1;
 }
