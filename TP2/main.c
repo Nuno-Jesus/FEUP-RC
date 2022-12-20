@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 		print_error("read_response", "Response code was not 220 (success code).");
 	}
 
-	request_login(fd, link);
+	login(fd, link);
 	passive_mode(fd, link);
 
 	//############# OPEN THE SOCKET TO TRANSFER THE FILE #########################

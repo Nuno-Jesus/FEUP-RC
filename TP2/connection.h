@@ -14,7 +14,7 @@ void	send_command(char *command, char *arg, int fd, int port);
 
 int		read_response(int fd);
 
-int		request_login(int fd, Link* url);
+int		login(int fd, Link* url);
 
 int		passive_mode(int fd, Link *link);
 
