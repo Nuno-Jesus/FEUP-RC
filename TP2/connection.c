@@ -41,9 +41,9 @@ int socket_close(int fd)
 
 void send_command(char *command, char *arg, int fd, int port)
 {
-	char buffer[64];
+	char buffer[256];
 
-	memset(buffer, 0, 64);
+	memset(buffer, 0, 256);
 	sprintf(buffer, "%s%s\n", command, arg);
 	printf("\n> Sending command %s\'%s%s\'%s to port %s%d%s\n", 
 		BYELLOW, command, arg, RESET, BYELLOW, port, RESET);
