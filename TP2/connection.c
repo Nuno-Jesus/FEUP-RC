@@ -152,8 +152,7 @@ int download(Link *link, char *filename, int ftp_fd)
 {
 	int filefd;
 	int sockfd;
-	char *line;
-	size_t filesize;
+	char c;
 
 	//######################### OPEN THE SOCKET TO TRANSFER THE FILE #########################
 
@@ -163,30 +162,29 @@ int download(Link *link, char *filename, int ftp_fd)
 		print_error("socket_open", "Couldn't establish connection");
 	}
 
-	filesize = request_file(ftp_fd, link);
+	request_file(ftp_fd, link);
 
 	filefd = open(filename, O_WRONLY | O_CREAT, 0666);
-	if (!(line = malloc(READ_MAX + 1)))
-	{
-		close(filefd);
-		return (0);
-	}
 
-	printf("\n> Dowloading %s\'%s\'%s...", BYELLOW, filename, RESET);
-	for (size_t i = 0; i < filesize; i += READ_MAX)
+
+	printf("\n> Dowloading %s\'%s\'%s...\n", BYELLOW, filename, RESET);
+	
+	#ifdef DEBUG
+		size_t i = 0;
+	#endif
+
+	while (read(sockfd, &c, 1) > 0)
 	{
-		ssize_t bytes = read(sockfd, line, READ_MAX);
-		if (bytes == -1)
-			break;
-		line[bytes] = 0;
-		printf("%ld = %s\n", bytes, line);
-		write(filefd, line, bytes);
+		#ifdef DEBUG
+			printf("%ld = '%c' (%#02X)\n", i++, c, c);
+		#endif
+		write(filefd, &c, 1);
 	}
 	printf("\n> %sDownload complete.%s\n", BCYAN, RESET);
 
 	//################################### CLOSE THE SOCKET ###################################
 
-	free(line);
+	//free(line);
 	close(filefd);
 
 	if ((sockfd = socket_close(sockfd)) < 0)
