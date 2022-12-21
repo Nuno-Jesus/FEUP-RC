@@ -1,20 +1,20 @@
-#include "link.h"
+#include "entity.h"
 
-Link *link_new (char *user, char *password, char *hostname, char *path)
+Entity *entity_new (char *user, char *password, char *hostname, char *path)
 {
-	Link* link = malloc(sizeof(Link));
-	if (!link)
+	Entity* entity = malloc(sizeof(Entity));
+	if (!entity)
 		return NULL;
-	link->user = user;
-	link->password = password;
-	link->hostname = hostname;
-	link->path = path;
-	link->port = 0;
+	entity->user = user;
+	entity->password = password;
+	entity->hostname = hostname;
+	entity->path = path;
+	entity->port = 0;
 
-	return link;
+	return entity;
 }
 
-void link_delete(Link *url)
+void entity_delete(Entity *url)
 {
 	if (!url)
 		return ;
@@ -29,7 +29,7 @@ void link_delete(Link *url)
 	free(url);
 }
 
-void link_print(Link *url)
+void entity_print(Entity *url)
 {
 	if (!url)
 		return ;

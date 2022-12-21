@@ -1,6 +1,6 @@
 #include "connection.h"
 
-int	socket_open(Link *url, int port)
+int	socket_open(Entity *url, int port)
 {
 	int fd;
     struct sockaddr_in server_addr;
@@ -70,7 +70,7 @@ char *read_response(int fd)
 	return line;
 }
 
-int login(int fd, Link* url)
+int login(int fd, Entity* url)
 {
 	char *response;
 
@@ -96,7 +96,7 @@ int login(int fd, Link* url)
 	return 1;
 }
 
-int passive_mode(int fd, Link *link)
+int passive_mode(int fd, Entity *link)
 {	
 	send_command("PASV", "", fd, FTP_PORT);
 
@@ -119,7 +119,7 @@ int passive_mode(int fd, Link *link)
 	return 1;
 }
 
-int request_file(int fd, Link *link)
+int request_file(int fd, Entity *link)
 {
 	char *line;
 	int code;
@@ -151,7 +151,7 @@ int request_file(int fd, Link *link)
 	return 1;
 }
 
-int download(Link *link, char *filename, int ftp_fd)
+int download(Entity *link, char *filename, int ftp_fd)
 {
 	int filefd;
 	int sockfd;

@@ -21,7 +21,7 @@ MKFLAGS = --no-print-directory
 DEPS = .
 
 #_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_ FILES _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
-TARGET = utils.o link.o str.o connection.o
+TARGET = utils.o entity.o str.o connection.o
 NAME = download
 MAIN = main.c
 

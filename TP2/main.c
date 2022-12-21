@@ -17,7 +17,7 @@ char *getip(char *hostname)
 	return ip;
 }
 
-Link *parse_url(char *link)
+Entity *parse_url(char *link)
 {
 	regex_t regex;
 
@@ -36,12 +36,12 @@ Link *parse_url(char *link)
 	char *temp = strchr(dup , '/');
 	temp[0] = DELIMITER;
 	char **tokens = split(dup, DELIMITER);
-	Link *args;
+	Entity *args;
 
 	if (strchr(link + 6, '@') && strchr(link + 6, ':'))
-		args = link_new(strdup(tokens[0]), strdup(tokens[1]), strdup(tokens[2]), strdup(tokens[3]));
+		args = entity_new(strdup(tokens[0]), strdup(tokens[1]), strdup(tokens[2]), strdup(tokens[3]));
 	else
-		args = link_new(strdup("anonymous"), strdup("dummy"), strdup(tokens[0]), strdup(tokens[1]));
+		args = entity_new(strdup("anonymous"), strdup("dummy"), strdup(tokens[0]), strdup(tokens[1]));
 
 	if (args)
 		args->ip = getip(args->hostname);
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 		print_usage(argv[0]);
 	
 	int fd;
-	Link *link;
+	Entity *link;
 	char *response;
 
 	if (!(link = parse_url(argv[1])))
@@ -68,11 +68,11 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	link_print(link); 
+	entity_print(link); 
 
 	if ((fd = socket_open(link, FTP_PORT)) < 0)
 	{
-		link_delete(link);
+		entity_delete(link);
 		print_error("socket_open", "Couldn't establish connection");
 	}
 	
@@ -84,25 +84,25 @@ int main(int argc, char **argv)
 
 	if (code != CODE_SERVICE_READY)
 	{
-		link_delete(link);
+		entity_delete(link);
 		print_error("read_response", "Response code was not 220 (success code).");
 	}
 
 	if (!login(fd, link))
 	{
-		link_delete(link);
+		entity_delete(link);
 		print_error("login", "Login error");
 	}
 
 	if (!passive_mode(fd, link))
 	{
-		link_delete(link);
+		entity_delete(link);
 		print_error("passive_mode", "Whats");
 	}
 
 	download(link, get_filename(link->path), fd);
 
-	link_delete(link);
+	entity_delete(link);
 
 	if ((fd = socket_close(fd)) < 0)
 		print_error("socket_close", "Couldn't close connection");
