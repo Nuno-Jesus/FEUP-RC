@@ -18,7 +18,7 @@ int		login(int fd, Link* url);
 
 int		passive_mode(int fd, Link *link);
 
-size_t	request_file(int fd, Link *link);
+int	request_file(int fd, Link *link);
 
 int		download(Link *link, char *filename, int ftp_fd);
 

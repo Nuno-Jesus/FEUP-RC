@@ -104,13 +104,6 @@ int passive_mode(int fd, Link *link)
 	char *line = get_line(fd);
 	printf("%s", line);
 
-	if (atoi(line) == CODE_WRONG_FILE)
-	{
-		free(line);
-		printf("\n\t%sNo such file.%s\n\n", BRED, RESET);
-		return 0;
-	}
-
 	//Use a new string to retrive the (xxx, xxx, xxx,...) part of the string
 	char *tmp = strtrim(strchr(line, '('), "().\n\r");
 
@@ -126,26 +119,36 @@ int passive_mode(int fd, Link *link)
 	return 1;
 }
 
-size_t request_file(int fd, Link *link)
+int request_file(int fd, Link *link)
 {
-	size_t filesize = 0;
 	char *line;
+	int code;
 	
 	send_command("TYPE ", "I", fd, link->port);
 
-	line = get_line(fd);
-	printf("%s", line);
+	line = read_response(fd);
+	code = atoi(line);
 	free(line);
+
+	if (code == CODE_FAILURE)
+	{
+		printf("\n\t%s TYPE: unrecognized mode.%s\n\n", BRED, RESET);
+		return 0;
+	}
 
 	send_command("RETR ", link->path, fd, link->port);
 
-	line = get_line(fd);
-	printf("%s", line);
-	
-	filesize = atoi(strchr(line, '(') + 1);
+	line = read_response(fd);
+	code = atoi(line);
 	free(line);
 
-	return filesize;
+	if (code == CODE_WRONG_FILE)
+	{
+		printf("\n\t%sRETR: no such file.%s\n\n", BRED, RESET);
+		return 0;
+	}
+
+	return 1;
 }
 
 int download(Link *link, char *filename, int ftp_fd)
@@ -157,15 +160,16 @@ int download(Link *link, char *filename, int ftp_fd)
 	//######################### OPEN THE SOCKET TO TRANSFER THE FILE #########################
 
 	if ((sockfd = socket_open(link, link->port)) < 0)
+		return 0;
+
+	if (!request_file(ftp_fd, link))
+		return 0;
+
+	if ((filefd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
 	{
-		link_delete(link);
-		print_error("socket_open", "Couldn't establish connection");
+		printf("\n\t%sFailed to create '%s' file.%s\n\n", BCYAN, filename, RESET);
+		return 0;
 	}
-
-	request_file(ftp_fd, link);
-
-	filefd = open(filename, O_WRONLY | O_CREAT, 0666);
-
 
 	printf("\n> Dowloading %s\'%s\'%s...\n", BYELLOW, filename, RESET);
 	
@@ -184,14 +188,9 @@ int download(Link *link, char *filename, int ftp_fd)
 
 	//################################### CLOSE THE SOCKET ###################################
 
-	//free(line);
 	close(filefd);
-
 	if ((sockfd = socket_close(sockfd)) < 0)
-	{
-		link_delete(link);
-		print_error("socket_close", "Couldn't close connection");
-	}
+		return 0;
 
 	return 1;
 }
