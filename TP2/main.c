@@ -19,16 +19,6 @@ char *getip(char *hostname)
 
 Entity *parse_url(char *link)
 {
-	regex_t regex;
-
-	regcomp(&regex, "ftp://(.*:.*@)?$", 0);
-	int status = regexec(&regex, link, 0, NULL, 0);
-
-	if (!status)
-		puts("Match!");
-	else if (status == REG_NOMATCH)
-		puts("Not match");
-
 	if (strstr(link, "ftp://") != link)
 		print_error("parse_url", "missing \"ftp://\" at the beggining of the url");
 
@@ -46,7 +36,6 @@ Entity *parse_url(char *link)
 	if (args)
 		args->ip = getip(args->hostname);
 	
-	regfree(&regex);
 	delete_matrix(tokens);
 	free(dup);
 
