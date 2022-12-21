@@ -1,6 +1,6 @@
 #include "connection.h"
 
-int	socket_open(Entity *url, int port)
+int	socket_open(char *ip, int port)
 {
 	int fd;
     struct sockaddr_in server_addr;
@@ -8,7 +8,7 @@ int	socket_open(Entity *url, int port)
     /*server address handling*/
     memset((char *) &server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(url->ip); 
+    server_addr.sin_addr.s_addr = inet_addr(ip); 
     server_addr.sin_port = htons(port);     
 
     /*open a TCP socket*/
@@ -159,7 +159,7 @@ int download(Entity *link, char *filename, int ftp_fd)
 
 	//######################### OPEN THE SOCKET TO TRANSFER THE FILE #########################
 
-	if ((sockfd = socket_open(link, link->port)) < 0)
+	if ((sockfd = socket_open(link->ip, link->port)) < 0)
 		return 0;
 
 	if (!request_file(ftp_fd, link))

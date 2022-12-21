@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 	
 	entity_print(link); 
 
-	if ((fd = socket_open(link, FTP_PORT)) < 0)
+	if ((fd = socket_open(link->ip, FTP_PORT)) < 0)
 	{
 		entity_delete(link);
 		print_error("socket_open", "Couldn't establish connection");
