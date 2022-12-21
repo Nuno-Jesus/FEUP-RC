@@ -135,6 +135,7 @@ size_t request_file(int fd, Link *link)
 
 	line = get_line(fd);
 	printf("%s", line);
+	free(line);
 
 	send_command("RETR ", link->path, fd, link->port);
 
@@ -164,7 +165,7 @@ int download(Link *link, char *filename, int ftp_fd)
 
 	filesize = request_file(ftp_fd, link);
 
-	filefd = open(filename, O_WRONLY | O_CREAT);
+	filefd = open(filename, O_WRONLY | O_CREAT, 0666);
 	if (!(line = malloc(READ_MAX + 1)))
 	{
 		close(filefd);
@@ -175,10 +176,10 @@ int download(Link *link, char *filename, int ftp_fd)
 	for (size_t i = 0; i < filesize; i += READ_MAX)
 	{
 		ssize_t bytes = read(sockfd, line, READ_MAX);
-		printf("%s", line);
 		if (bytes == -1)
 			break;
 		line[bytes] = 0;
+		printf("%ld = %s\n", bytes, line);
 		write(filefd, line, bytes);
 	}
 	printf("\n> %sDownload complete.%s\n", BCYAN, RESET);
